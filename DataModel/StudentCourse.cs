@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IntellectFlow.DataModel
 {
-    public class StudentCourse
+    public class StudentCourse : BaseEntity
     {
         public int StudentId { get; set; }
         public Student Student { get; set; } = null!;

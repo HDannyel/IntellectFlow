@@ -7,7 +7,7 @@ using System.Windows.Input;
 
 namespace IntellectFlow.DataModel
 {
-    public class Discipline
+    public class Discipline : BaseEntity
     {
         public int Id { get; set; }
         public required string Name { get; set; }

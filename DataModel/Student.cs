@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IntellectFlow.DataModel
 {
-    public class Student
+    public class Student : BaseEntity
     {
         public int Id { get; set; }
         public required string UserId { get; set; } // Связь с IdentityUser

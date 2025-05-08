@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IntellectFlow.DataModel
 {
-    public class Assignment
+    public class Assignment : BaseEntity
     {
         public int Id { get; set; }
         public required string Title { get; set; }

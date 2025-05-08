@@ -7,7 +7,7 @@ using System.Windows.Input;
 
 namespace IntellectFlow.DataModel
 {
-    public class Teacher
+    public class Teacher : BaseEntity
     {
         public int Id { get; set; }
         public required string UserId { get; set; } // Связь с IdentityUser
