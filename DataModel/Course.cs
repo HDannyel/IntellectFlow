@@ -11,7 +11,8 @@ namespace IntellectFlow.DataModel
         public int Id { get; set; }
         public required string Name { get; set; }
         public string? Description { get; set; }
-        public required string InvitationCode { get; set; }
+
+        //public required string? InvitationCode { get; set; }
         public int DisciplineId { get; set; }
         public Discipline Discipline { get; set; } = null!;
         public int TeacherId { get; set; }

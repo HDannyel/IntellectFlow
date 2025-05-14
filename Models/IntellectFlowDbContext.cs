@@ -67,10 +67,7 @@ namespace IntellectFlow.Models
                 .WithMany(s => s.TaskSubmissions)
                 .HasForeignKey(s => s.StudentId);
 
-            // Уникальный индекс для InvitationCode
-            modelBuilder.Entity<Course>()
-                .HasIndex(c => c.InvitationCode)
-                .IsUnique();
+        
 
             modelBuilder.Entity<Lecture>()
                  .HasOne(l => l.Document)
