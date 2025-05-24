@@ -5,15 +5,18 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
     <Grid Margin="10">
-        <!-- Левая панель управления -->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,0,10,0">
-            <!-- Форма добавления дисциплины -->
             <TextBlock Text="Название дисциплины:" Margin="0,0,0,5"/>
             <TextBox Text="{Binding DisciplineName}" Margin="0,0,0,10"/>
 
@@ -26,7 +29,6 @@
                     Padding="10,5"
                     Margin="0,0,0,20"/>
 
-            <!-- Форма добавления курса -->
             <TextBlock Text="Выберите дисциплину:" Margin="0,0,0,5"/>
             <ComboBox ItemsSource="{Binding Disciplines}"
                       SelectedItem="{Binding SelectedDiscipline}"
@@ -44,18 +46,41 @@
                     HorizontalAlignment="Left"
                     Padding="10,5"
                     Margin="0,0,0,10"/>
+
+            <!-- Новые кнопки, видимые только администратору -->
+            <Button Content="Добавить преподавателя"
+        HorizontalAlignment="Left"
+        Padding="10,5"
+        Margin="0,10,0,0"
+        Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}"
+        Click="AddTeacher_Click"/>
+
+            <Button Content="Добавить студента"
+        HorizontalAlignment="Left"
+        Padding="10,5"
+        Margin="0,5,0,0"
+        Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}"
+        Click="AddStudent_Click"/>
+
         </StackPanel>
 
-        <!-- Правая часть - список дисциплин и курсов -->
         <Grid Grid.Column="1">
             <TabControl>
                 <TabItem Header="Дисциплины">
                     <ListBox ItemsSource="{Binding Disciplines}"
                              SelectedItem="{Binding SelectedDiscipline}"
-                             DisplayMemberPath="Name"
-                             Margin="10"/>
+                             Margin="10"
+                             MouseDoubleClick="DisciplinesListBox_MouseDoubleClick">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Description}" FontStyle="Italic" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </TabItem>
-
                 <TabItem Header="Курсы">
                     <ListBox ItemsSource="{Binding Courses}"
                              SelectedItem="{Binding SelectedCourse}"

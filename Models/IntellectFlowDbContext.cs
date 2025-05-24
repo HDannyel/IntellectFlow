@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Configuration;
+using System.Linq;
 
 namespace IntellectFlow.Models
 {
@@ -16,9 +17,13 @@ namespace IntellectFlow.Models
         public DbSet<StudentCourse> StudentCourses { get; set; }
         public DbSet<StudentTaskSubmission> StudentTaskSubmissions { get; set; }
 
+        public DbSet<Group> Groups { get; set; }                // Добавлено
+        public DbSet<StudentGroup> StudentGroups { get; set; }  // Добавлено
+        public DbSet<User> Users { get; set; }                   // Добавлено
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Настройка аудитных полей для всех сущностей, унаследованных от BaseEntity
+            // Настройка аудита для BaseEntity
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
@@ -27,13 +32,14 @@ namespace IntellectFlow.Models
                         .Property<DateTime>("CreatedAt")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    //modelBuilder.Entity(entityType.ClrType)
-                    //    .Property<DateTime?>("UpdatedAt")
-                    //    .HasComputedColumnSql("ISNULL([UpdatedAt], [CreatedAt])");
+                    // modelBuilder.Entity(entityType.ClrType)
+                    //     .Property<DateTime?>("UpdatedAt")
+                    //     .HasComputedColumnSql("ISNULL([UpdatedAt], [CreatedAt])");
                 }
             }
 
-            // Настройка связей
+            // Конфигурация связей
+
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Discipline)
                 .WithMany(d => d.Courses)
@@ -57,6 +63,19 @@ namespace IntellectFlow.Models
                 .WithMany(c => c.StudentCourses)
                 .HasForeignKey(sc => sc.CourseId);
 
+            modelBuilder.Entity<StudentGroup>()                     // Конфигурация StudentGroup
+                .HasKey(sg => new { sg.StudentId, sg.GroupId });
+
+            modelBuilder.Entity<StudentGroup>()
+                .HasOne(sg => sg.Student)
+                .WithMany(s => s.StudentGroups)
+                .HasForeignKey(sg => sg.StudentId);
+
+            modelBuilder.Entity<StudentGroup>()
+                .HasOne(sg => sg.Group)
+                .WithMany(g => g.StudentGroups)
+                .HasForeignKey(sg => sg.GroupId);
+
             modelBuilder.Entity<Assignment>()
                 .HasMany(a => a.Submissions)
                 .WithOne(s => s.Assignment)
@@ -67,13 +86,11 @@ namespace IntellectFlow.Models
                 .WithMany(s => s.TaskSubmissions)
                 .HasForeignKey(s => s.StudentId);
 
-        
-
             modelBuilder.Entity<Lecture>()
-                 .HasOne(l => l.Document)
-                 .WithMany()
-                 .HasForeignKey(l => l.DocumentId)
-                 .OnDelete(DeleteBehavior.Cascade); // При удалении документа удаляется и лекция
+                .HasOne(l => l.Document)
+                .WithMany()
+                .HasForeignKey(l => l.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade); // При удалении документа удаляется и лекция
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
