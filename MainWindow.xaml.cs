@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Controls;
 
 namespace IntellectFlow.Views
 {
@@ -25,21 +26,12 @@ namespace IntellectFlow.Views
 
             RoleTextBlock.Text = $"Вы вошли как: {role}";
 
-            switch (role)
+            ContentControlArea.Content = role switch
             {
-                case "Admin":
-                    var adminView = _serviceProvider.GetRequiredService<AdminView>();
-                    ContentControlArea.Content = adminView;
-                    break;
-                case "Teacher":
-                    var teacherView = _serviceProvider.GetRequiredService<TeacherView>();
-                    ContentControlArea.Content = teacherView;
-                    break;
-                default:
-                    var studentView = _serviceProvider.GetRequiredService<StudentView>();
-                    ContentControlArea.Content = studentView;
-                    break;
-            }
+                "Admin" => _serviceProvider.GetRequiredService<AdminView>(),
+                "Teacher" => _serviceProvider.GetRequiredService<TeacherView>(),
+                _ => _serviceProvider.GetRequiredService<StudentView>(),
+            };
         }
     }
 }

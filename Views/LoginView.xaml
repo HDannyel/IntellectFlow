@@ -10,7 +10,6 @@
             <TextBlock Text="Пароль" Margin="0,0,0,5"/>
             <PasswordBox x:Name="PasswordBox" Margin="0,0,0,10"/>
 
-            <!-- Кнопка теперь с событием Click -->
             <Button Content="Войти" Click="LoginButton_Click"/>
         </StackPanel>
     </Grid>

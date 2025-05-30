@@ -8,7 +8,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Background="#EEE" Grid.Row="0">
+        <DockPanel Grid.Row="0" Background="#EEE">
             <TextBlock x:Name="RoleTextBlock"
                        FontWeight="Bold"
                        FontSize="14"

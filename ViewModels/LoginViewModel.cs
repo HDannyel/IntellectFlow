@@ -1,12 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using IntellectFlow.Helpers;
 using IntellectFlow.Views;
-using IntellectFlow;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 using System.Windows;
+using System.Windows.Input;
 
 public class LoginViewModel : INotifyPropertyChanged
 {
@@ -36,19 +37,26 @@ public class LoginViewModel : INotifyPropertyChanged
             var roles = await _authService.Login(Email, password);
             if (roles != null)
             {
-                Application.Current.Windows.OfType<LoginView>().FirstOrDefault()?.Close();
-
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
 
-                // 💡 Обязательно вызываем Initialize
+                // 1. Инициализация ServiceProvider
                 mainWindow.Initialize(_serviceProvider);
 
+                // 2. Определение основной роли
                 var primaryRole = roles.Contains("Admin") ? "Admin" :
-                                  roles.Contains("Teacher") ? "Teacher" :
-                                  "Student";
+                                  roles.Contains("Teacher") ? "Teacher" : "Student";
 
+                // 3. Установка контента по роли
                 mainWindow.SetContentForRole(primaryRole);
+
+                // 4. Показ главного окна до закрытия LoginView
                 mainWindow.Show();
+
+                // 5. Закрытие окна авторизации
+                Application.Current.Windows
+                    .OfType<LoginView>()
+                    .FirstOrDefault()?
+                    .Close();
             }
             else
             {
@@ -60,7 +68,6 @@ public class LoginViewModel : INotifyPropertyChanged
             MessageBox.Show($"Ошибка входа: {ex.Message}");
         }
     }
-
 
 
     public event PropertyChangedEventHandler PropertyChanged;

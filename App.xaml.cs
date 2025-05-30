@@ -1,24 +1,21 @@
-﻿using IntellectFlow.DataModel;
+﻿using IntellectFlow.Views;
+using IntellectFlow.DataModel;
 using IntellectFlow.Helpers;
 using IntellectFlow.Models;
 using IntellectFlow.ViewModels;
-using IntellectFlow.Views;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Configuration;
 using System.Windows;
 
 namespace IntellectFlow
 {
     public partial class App : Application
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public IServiceProvider ServiceProvider => _serviceProvider;
+        private IServiceProvider _serviceProvider;
 
         public App()
         {
@@ -27,17 +24,11 @@ namespace IntellectFlow
             _serviceProvider = services.BuildServiceProvider();
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        private async void App_Startup(object sender, StartupEventArgs e)
         {
-            base.OnStartup(e);
+            await AuthInitializer.EnsureAdminUser(_serviceProvider);
 
-            var serviceProvider = ServiceProvider;
-
-            // Инициализация администратора
-            await AuthInitializer.EnsureAdminUser(serviceProvider);
-
-            // Правильно создавать LoginView через DI:
-            var loginView = serviceProvider.GetRequiredService<LoginView>();
+            var loginView = _serviceProvider.GetRequiredService<LoginView>();
             loginView.Show();
         }
 
@@ -51,7 +42,7 @@ namespace IntellectFlow
 
             services.AddDbContext<IntellectFlowDbContext>(options =>
             {
-                var connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["defaultConnectionString"]?.ConnectionString;
+                var connectionString = ConfigurationManager.ConnectionStrings["defaultConnectionString"]?.ConnectionString;
                 options.UseSqlServer(connectionString);
             });
 
@@ -63,6 +54,7 @@ namespace IntellectFlow
             })
             .AddEntityFrameworkStores<IntellectFlowDbContext>()
             .AddDefaultTokenProviders();
+
             services.AddSingleton<IServiceProvider>(sp => sp);
 
             services.AddSingleton<INavigationService, NavigationService>();
@@ -75,7 +67,6 @@ namespace IntellectFlow
             services.AddTransient<AdminViewModel>();
             services.AddTransient<TeacherViewModel>();
             services.AddTransient<StudentViewModel>();
-            services.AddTransient<AdminView>(sp => new AdminView(sp));
 
             services.AddTransient<LoginView>();
             services.AddTransient<MainWindow>();

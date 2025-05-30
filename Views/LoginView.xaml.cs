@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Windows;
-using IntellectFlow.Helpers;
+﻿using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IntellectFlow.Views
 {
@@ -16,7 +15,6 @@ namespace IntellectFlow.Views
         {
             if (DataContext is LoginViewModel viewModel)
             {
-                // Передаём пароль вручную
                 viewModel.LoginCommand.Execute(PasswordBox.Password);
             }
         }
