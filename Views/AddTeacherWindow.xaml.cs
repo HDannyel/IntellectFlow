@@ -26,7 +26,7 @@ namespace IntellectFlow.Views
             NewTeacher = new Teacher
             {
                 Name = NameTextBox.Text.Trim(),
-                MidleName = MidleNameTextBox.Text.Trim(),
+                MiddleName = MidleNameTextBox.Text.Trim(),
                 LastName = LastNameTextBox.Text.Trim()
             };
 

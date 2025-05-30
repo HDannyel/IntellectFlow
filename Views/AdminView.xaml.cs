@@ -1,5 +1,7 @@
 ﻿using IntellectFlow.DataModel;
+using IntellectFlow.Helpers;
 using IntellectFlow.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +23,14 @@ namespace IntellectFlow.Views
     /// </summary>
     public partial class AdminView : UserControl
     {
-        public AdminView()
+        private readonly IServiceProvider _serviceProvider;
+
+        public AdminView(IServiceProvider serviceProvider)
         {
             InitializeComponent();
+            _serviceProvider = serviceProvider;
         }
+
         private void DisciplinesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var listBox = sender as ListBox;
@@ -34,7 +40,7 @@ namespace IntellectFlow.Views
                 MessageBox.Show($"Вы выбрали дисциплину: {selectedDiscipline.Name}");
             }
         }
-        private void AddStudent_Click(object sender, RoutedEventArgs e)
+        private async void AddStudent_Click(object sender, RoutedEventArgs e)
         {
             var addStudentWindow = new AddStudentWindow();
             if (addStudentWindow.ShowDialog() == true)
@@ -42,16 +48,32 @@ namespace IntellectFlow.Views
                 var newStudent = addStudentWindow.NewStudent;
                 if (newStudent != null)
                 {
-                    // Добавить нового студента в коллекцию, например, через DataContext
-                    if (DataContext is AdminViewModel vm)
+                    var userService = _serviceProvider.GetRequiredService<UserService>();
+
+                    try
                     {
-                        vm.Students.Add(newStudent);
+                        var (login, password) = await userService.CreateStudentAsync(
+                            newStudent.Name,
+                            newStudent.MiddleName,
+                            newStudent.LastName);
+
+                        MessageBox.Show($"Студент добавлен!\nЛогин: {login}\nПароль: {password}");
+
+                        if (DataContext is AdminViewModel vm)
+                        {
+                            vm.Students.Add(newStudent);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при добавлении студента: {ex.Message}");
                     }
                 }
             }
         }
 
-        private void AddTeacher_Click(object sender, RoutedEventArgs e)
+
+        private async void AddTeacher_Click(object sender, RoutedEventArgs e)
         {
             var addTeacherWindow = new AddTeacherWindow();
             if (addTeacherWindow.ShowDialog() == true)
@@ -59,13 +81,30 @@ namespace IntellectFlow.Views
                 var newTeacher = addTeacherWindow.NewTeacher;
                 if (newTeacher != null)
                 {
-                    if (DataContext is AdminViewModel vm)
+                    var userService = _serviceProvider.GetRequiredService<UserService>();
+
+                    try
                     {
-                        vm.Teachers.Add(newTeacher);
+                        var (login, password) = await userService.CreateTeacherAsync(
+                            newTeacher.Name,
+                            newTeacher.MiddleName,
+                            newTeacher.LastName);
+
+                        MessageBox.Show($"Преподаватель добавлен!\nЛогин: {login}\nПароль: {password}");
+
+                        if (DataContext is AdminViewModel vm)
+                        {
+                            vm.Teachers.Add(newTeacher);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при добавлении преподавателя: {ex.Message}");
                     }
                 }
             }
         }
+
 
     }
 }

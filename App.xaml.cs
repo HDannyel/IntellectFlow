@@ -41,51 +41,6 @@ namespace IntellectFlow
             loginView.Show();
         }
 
-
-        private async Task InitializeDatabaseAndRolesAndAdmin()
-        {
-            using var scope = _serviceProvider.CreateScope();
-
-            var dbContext = scope.ServiceProvider.GetRequiredService<IntellectFlowDbContext>();
-            await dbContext.Database.EnsureCreatedAsync();
-
-            var roleService = scope.ServiceProvider.GetRequiredService<RoleService>();
-            await roleService.EnsureRolesCreated();
-
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-
-            const string adminEmail = "admin@example.com";
-            const string adminPassword = "Admin@123";
-
-            var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-            if (adminUser != null)
-            {
-                await userManager.DeleteAsync(adminUser); // удалим старого, если был битый
-            }
-
-            adminUser = new User
-            {
-                UserName = "admin",
-                Email = "admin@example.com",
-                Name = "System",
-                LastName = "Administrator",
-                EmailConfirmed = true
-            };
-
-            var createResult = await userManager.CreateAsync(adminUser, "Admin@123");
-
-            if (!createResult.Succeeded)
-            {
-                throw new Exception("Не удалось создать администратора: " +
-                    string.Join(", ", createResult.Errors.Select(e => e.Description)));
-            }
-
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-
-        }
-
-
         private void ConfigureServices(IServiceCollection services)
         {
             services.AddLogging(builder =>
@@ -120,6 +75,7 @@ namespace IntellectFlow
             services.AddTransient<AdminViewModel>();
             services.AddTransient<TeacherViewModel>();
             services.AddTransient<StudentViewModel>();
+            services.AddTransient<AdminView>(sp => new AdminView(sp));
 
             services.AddTransient<LoginView>();
             services.AddTransient<MainWindow>();

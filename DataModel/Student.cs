@@ -4,7 +4,7 @@ public class Student : BaseEntity
 {
     public int Id { get; set; }
     public string Name { get; set; }
-    public string MidleName { get; set; }
+    public string MiddleName { get; set; }
     public string LastName { get; set; }
 
     public string Login { get; set; }
