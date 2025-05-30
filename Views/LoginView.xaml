@@ -1,0 +1,17 @@
+﻿<Window x:Class="IntellectFlow.Views.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Вход в систему" Height="300" Width="400">
+    <Grid>
+        <StackPanel Margin="20">
+            <TextBlock Text="Email" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding Email}" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Пароль" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="PasswordBox" Margin="0,0,0,10"/>
+
+            <!-- Кнопка теперь с событием Click -->
+            <Button Content="Войти" Click="LoginButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
