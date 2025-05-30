@@ -1,26 +1,20 @@
-﻿using IntellectFlow.Helpers;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 public class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly INavigationService _navigationService;
 
-    public object CurrentPage => _navigationService.CurrentView;
+    public object CurrentView => _navigationService.CurrentView;
 
     public MainWindowViewModel(INavigationService navigationService)
     {
         _navigationService = navigationService;
-
-        // Опционально: подписка на обновления
-        if (_navigationService is NavigationService nav)
+        _navigationService.PropertyChanged += (s, e) =>
         {
-            nav.PropertyChanged += (sender, args) =>
-            {
-                if (args.PropertyName == nameof(nav.CurrentView))
-                    OnPropertyChanged(nameof(CurrentPage));
-            };
-        }
+            if (e.PropertyName == nameof(_navigationService.CurrentView))
+                OnPropertyChanged(nameof(CurrentView));
+        };
     }
 
     public event PropertyChangedEventHandler PropertyChanged;

@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
-namespace IntellectFlow.Helpers
+public interface INavigationService : INotifyPropertyChanged
 {
-    public interface INavigationService
-    {
-        object CurrentView { get; }
-        void NavigateTo<T>() where T : class;
-    }
+    object CurrentView { get; }
+    void NavigateTo<TView>() where TView : class;
 }

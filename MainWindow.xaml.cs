@@ -23,7 +23,6 @@ namespace IntellectFlow.Views
             if (_serviceProvider == null)
                 throw new InvalidOperationException("ServiceProvider не инициализирован");
 
-            // Отображаем текущую роль в UI
             RoleTextBlock.Text = $"Вы вошли как: {role}";
 
             switch (role)

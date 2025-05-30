@@ -1,34 +1,41 @@
-﻿using IntellectFlow.Helpers;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 public class NavigationService : INavigationService, INotifyPropertyChanged
 {
     private readonly IServiceProvider _serviceProvider;
     private object _currentView;
 
-    public object CurrentView
-    {
-        get => _currentView;
-        private set
-        {
-            _currentView = value;
-            OnPropertyChanged();
-        }
-    }
-
     public NavigationService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public void NavigateTo<T>() where T : class
+    public object CurrentView
     {
-        CurrentView = _serviceProvider.GetRequiredService<T>();
+        get => _currentView;
+        private set
+        {
+            if (_currentView != value)
+            {
+                _currentView = value;
+                OnPropertyChanged(nameof(CurrentView));
+            }
+        }
+    }
+
+    public void NavigateTo<TView>() where TView : class
+    {
+        var view = _serviceProvider.GetService<TView>();
+        if (view == null)
+            throw new InvalidOperationException($"View of type {typeof(TView).Name} is not registered");
+
+        CurrentView = view;
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanged(string propName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
 }

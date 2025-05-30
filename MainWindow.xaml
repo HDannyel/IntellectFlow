@@ -4,11 +4,10 @@
         Title="IntellectFlow" Height="600" Width="900">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- для шапки -->
-            <RowDefinition Height="*"/>    <!-- для контента -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Шапка -->
         <DockPanel Background="#EEE" Grid.Row="0">
             <TextBlock x:Name="RoleTextBlock"
                        FontWeight="Bold"
@@ -16,7 +15,6 @@
                        Foreground="DarkSlateGray"/>
         </DockPanel>
 
-        <!-- Основной контент -->
         <ContentControl x:Name="ContentControlArea" Grid.Row="1"/>
     </Grid>
 </Window>
