@@ -4,6 +4,7 @@ using IntellectFlow.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntellectFlow.Migrations
 {
     [DbContext(typeof(IntellectFlowDbContext))]
-    partial class IntellectFlowContextModelSnapshot : ModelSnapshot
+    [Migration("20250530201105_AddFullNameToTaacherAndStudent")]
+    partial class AddFullNameToTaacherAndStudent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,7 +88,7 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TeacherId")
+                    b.Property<int>("TeacherId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -120,15 +123,10 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TeacherId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TeacherId");
 
                     b.ToTable("Disciplines");
                 });
@@ -224,44 +222,6 @@ namespace IntellectFlow.Migrations
                     b.HasIndex("DocumentId");
 
                     b.ToTable("Lectures");
-                });
-
-            modelBuilder.Entity("IntellectFlow.DataModel.Student", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MiddleName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("IntellectFlow.DataModel.StudentCourse", b =>
@@ -389,6 +349,10 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("MiddleName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -397,15 +361,14 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Teachers");
                 });
@@ -622,6 +585,47 @@ namespace IntellectFlow.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Student", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MiddleName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Students");
+                });
+
             modelBuilder.Entity("IntellectFlow.DataModel.Assignment", b =>
                 {
                     b.HasOne("IntellectFlow.DataModel.Course", "Course")
@@ -643,18 +647,11 @@ namespace IntellectFlow.Migrations
 
                     b.HasOne("IntellectFlow.DataModel.Teacher", "Teacher")
                         .WithMany("Courses")
-                        .HasForeignKey("TeacherId");
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Discipline");
-
-                    b.Navigation("Teacher");
-                });
-
-            modelBuilder.Entity("IntellectFlow.DataModel.Discipline", b =>
-                {
-                    b.HasOne("IntellectFlow.DataModel.Teacher", "Teacher")
-                        .WithMany()
-                        .HasForeignKey("TeacherId");
 
                     b.Navigation("Teacher");
                 });
@@ -678,17 +675,6 @@ namespace IntellectFlow.Migrations
                     b.Navigation("Document");
                 });
 
-            modelBuilder.Entity("IntellectFlow.DataModel.Student", b =>
-                {
-                    b.HasOne("IntellectFlow.DataModel.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("IntellectFlow.DataModel.StudentCourse", b =>
                 {
                     b.HasOne("IntellectFlow.DataModel.Course", "Course")
@@ -697,7 +683,7 @@ namespace IntellectFlow.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntellectFlow.DataModel.Student", "Student")
+                    b.HasOne("Student", "Student")
                         .WithMany("StudentCourses")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -716,7 +702,7 @@ namespace IntellectFlow.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntellectFlow.DataModel.Student", "Student")
+                    b.HasOne("Student", "Student")
                         .WithMany("StudentGroups")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -735,7 +721,7 @@ namespace IntellectFlow.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("IntellectFlow.DataModel.Student", "Student")
+                    b.HasOne("Student", "Student")
                         .WithMany("TaskSubmissions")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -744,17 +730,6 @@ namespace IntellectFlow.Migrations
                     b.Navigation("Assignment");
 
                     b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("IntellectFlow.DataModel.Teacher", b =>
-                {
-                    b.HasOne("IntellectFlow.DataModel.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -832,18 +807,18 @@ namespace IntellectFlow.Migrations
                     b.Navigation("StudentGroups");
                 });
 
-            modelBuilder.Entity("IntellectFlow.DataModel.Student", b =>
+            modelBuilder.Entity("IntellectFlow.DataModel.Teacher", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("Student", b =>
                 {
                     b.Navigation("StudentCourses");
 
                     b.Navigation("StudentGroups");
 
                     b.Navigation("TaskSubmissions");
-                });
-
-            modelBuilder.Entity("IntellectFlow.DataModel.Teacher", b =>
-                {
-                    b.Navigation("Courses");
                 });
 #pragma warning restore 612, 618
         }

@@ -85,6 +85,33 @@
                              DisplayMemberPath="Name"
                              Margin="10"/>
                 </TabItem>
+                <TabItem Header="Пользователи">
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Преподаватели -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Преподаватели" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                            <ListBox ItemsSource="{Binding Teachers}"
+                     DisplayMemberPath="FullName"
+                     SelectedItem="{Binding SelectedTeacher}"
+                     Margin="0,0,10,0"/>
+                        </StackPanel>
+
+                        <!-- Студенты -->
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Студенты" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                            <ListBox ItemsSource="{Binding Students}"
+                     DisplayMemberPath="FullName"
+                     SelectedItem="{Binding SelectedStudent}"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+
             </TabControl>
         </Grid>
     </Grid>

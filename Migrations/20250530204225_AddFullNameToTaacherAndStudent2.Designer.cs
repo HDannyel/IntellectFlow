@@ -4,6 +4,7 @@ using IntellectFlow.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntellectFlow.Migrations
 {
     [DbContext(typeof(IntellectFlowDbContext))]
-    partial class IntellectFlowContextModelSnapshot : ModelSnapshot
+    [Migration("20250530204225_AddFullNameToTaacherAndStudent2")]
+    partial class AddFullNameToTaacherAndStudent2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,7 +88,7 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TeacherId")
+                    b.Property<int>("TeacherId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -120,15 +123,10 @@ namespace IntellectFlow.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TeacherId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TeacherId");
 
                     b.ToTable("Disciplines");
                 });
@@ -643,18 +641,11 @@ namespace IntellectFlow.Migrations
 
                     b.HasOne("IntellectFlow.DataModel.Teacher", "Teacher")
                         .WithMany("Courses")
-                        .HasForeignKey("TeacherId");
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Discipline");
-
-                    b.Navigation("Teacher");
-                });
-
-            modelBuilder.Entity("IntellectFlow.DataModel.Discipline", b =>
-                {
-                    b.HasOne("IntellectFlow.DataModel.Teacher", "Teacher")
-                        .WithMany()
-                        .HasForeignKey("TeacherId");
 
                     b.Navigation("Teacher");
                 });

@@ -13,5 +13,8 @@ namespace IntellectFlow.DataModel
         public required string Name { get; set; }
         public string? Description { get; set; }
         public ICollection<Course> Courses { get; set; } = new List<Course>();
+        public int? TeacherId { get; set; }
+        public Teacher? Teacher { get; set; }
+
     }
 }

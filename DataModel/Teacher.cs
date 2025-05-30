@@ -10,12 +10,15 @@ namespace IntellectFlow.DataModel
     public class Teacher : BaseEntity
     {
         public int Id { get; set; }
+
         public string Name { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }
+        public string FullName => $"{Name} {MiddleName} {LastName}";
 
-        public string Login { get; set; }       // добавлено
-        public string Password { get; set; }    // надо захешировать
+        // Связь с пользователем Identity
+        public int UserId { get; set; }
+        public User User { get; set; }
 
         public ICollection<Course> Courses { get; set; } = new List<Course>();
     }

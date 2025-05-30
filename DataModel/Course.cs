@@ -15,7 +15,7 @@ namespace IntellectFlow.DataModel
         //public required string? InvitationCode { get; set; }
         public int DisciplineId { get; set; }
         public Discipline Discipline { get; set; } = null!;
-        public int TeacherId { get; set; }
+        public int? TeacherId { get; set; }
         public Teacher Teacher { get; set; } = null!;
         public ICollection<Lecture> Lectures { get; set; } = new List<Lecture>();
         public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();

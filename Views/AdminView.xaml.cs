@@ -29,7 +29,9 @@ namespace IntellectFlow.Views
         {
             InitializeComponent();
             _serviceProvider = serviceProvider;
+            DataContext = _serviceProvider.GetRequiredService<AdminViewModel>();
         }
+
 
         private void DisciplinesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

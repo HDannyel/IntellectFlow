@@ -1,211 +1,227 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
+using System.Threading.Tasks;
 using IntellectFlow.DataModel;
 using IntellectFlow.Helpers;
 using IntellectFlow.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Windows;
+
 
 namespace IntellectFlow.ViewModels
 {
     public class AdminViewModel : INotifyPropertyChanged
     {
-        private readonly IntellectFlowDbContext _context = new();
+        private readonly IntellectFlowDbContext _dbContext;
 
-        // Свойства для дисциплин
-        public ObservableCollection<Discipline> Disciplines { get; set; }
-        public Discipline SelectedDiscipline { get; set; }
+        public AdminViewModel(IntellectFlowDbContext dbContext)
+        {
+            _dbContext = dbContext;
+            // Запускаем асинхронную загрузку, но в конструкторе нельзя использовать await напрямую
+            // Поэтому запускаем в фоне:
+            Task.Run(async () => await LoadDataAsync());
 
-        // Свойства для курсов
-        public ObservableCollection<Course> Courses { get; set; }
-        public Course SelectedCourse { get; set; }
+            AddDisciplineCommand = new RelayCommand(async _ => await AddDisciplineAsync(), _ => CanAddDiscipline());
+            AddCourseCommand = new RelayCommand(async _ => await AddCourseAsync(), _ => CanAddCourse());
+        }
 
-        // Свойства для пользователей
-        public ObservableCollection<Student> Students { get; set; }
-        public Student SelectedStudent { get; set; }
+        private async Task LoadDataAsync()
+        {
+            var students = await _dbContext.Users.ToListAsync();
+            var disciplines = await _dbContext.Disciplines.ToListAsync();
+            var courses = await _dbContext.Courses.ToListAsync();
 
-        public ObservableCollection<Teacher> Teachers { get; set; }
-        public Teacher SelectedTeacher { get; set; }
+            // Обновляем коллекции в UI потоке
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                
+                Disciplines.Clear();
+                foreach (var d in disciplines) Disciplines.Add(d);
 
-        // Поля для создания
-        private string _disciplineName = "";
-        private string _disciplineDescription = "";
-        private string _courseName = "";
-        private string _courseDescription = "";
+                Disciplines.Clear();
+                foreach (var d in disciplines) Disciplines.Add(d);
 
-        private string _studentName = "";
-        private string _studentLogin = "";
-        private string _studentPassword = "";
+                Courses.Clear();
+                foreach (var c in courses) Courses.Add(c);
+            });
+        }
 
-        private string _teacherName = "";
-        private string _teacherLogin = "";
-        private string _teacherPassword = "";
+        // Коллекции
+        public ObservableCollection<Student> Students { get; } = new ObservableCollection<Student>();
+        public ObservableCollection<Teacher> Teachers { get; } = new ObservableCollection<Teacher>();
+        public ObservableCollection<Discipline> Disciplines { get; } = new ObservableCollection<Discipline>();
+        public ObservableCollection<Course> Courses { get; } = new ObservableCollection<Course>();
 
+        // Выбранные элементы
+        private Student _selectedStudent;
+        public Student SelectedStudent
+        {
+            get => _selectedStudent;
+            set
+            {
+                if (_selectedStudent != value)
+                {
+                    _selectedStudent = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private Teacher _selectedTeacher;
+        public Teacher SelectedTeacher
+        {
+            get => _selectedTeacher;
+            set
+            {
+                if (_selectedTeacher != value)
+                {
+                    _selectedTeacher = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private Discipline _selectedDiscipline;
+        public Discipline SelectedDiscipline
+        {
+            get => _selectedDiscipline;
+            set
+            {
+                if (_selectedDiscipline != value)
+                {
+                    _selectedDiscipline = value;
+                    OnPropertyChanged();
+                    AddCourseCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        private Course _selectedCourse;
+        public Course SelectedCourse
+        {
+            get => _selectedCourse;
+            set
+            {
+                if (_selectedCourse != value)
+                {
+                    _selectedCourse = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // Поля для ввода
+        private string _disciplineName;
         public string DisciplineName
         {
             get => _disciplineName;
-            set { _disciplineName = value; OnPropertyChanged(); }
+            set
+            {
+                if (_disciplineName != value)
+                {
+                    _disciplineName = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
+        private string _disciplineDescription;
         public string DisciplineDescription
         {
             get => _disciplineDescription;
-            set { _disciplineDescription = value; OnPropertyChanged(); }
+            set
+            {
+                if (_disciplineDescription != value)
+                {
+                    _disciplineDescription = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
+        private string _courseName;
         public string CourseName
         {
             get => _courseName;
-            set { _courseName = value; OnPropertyChanged(); }
+            set
+            {
+                if (_courseName != value)
+                {
+                    _courseName = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
+        private string _courseDescription;
         public string CourseDescription
         {
             get => _courseDescription;
-            set { _courseDescription = value; OnPropertyChanged(); }
+            set
+            {
+                if (_courseDescription != value)
+                {
+                    _courseDescription = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        public string StudentName
+        // Команды
+        public RelayCommand AddDisciplineCommand { get; }
+        public RelayCommand AddCourseCommand { get; }
+
+        private bool CanAddDiscipline() => !string.IsNullOrWhiteSpace(DisciplineName);
+
+        private bool CanAddCourse() => !string.IsNullOrWhiteSpace(CourseName) && SelectedDiscipline != null;
+
+        public async Task AddDisciplineAsync()
         {
-            get => _studentName;
-            set { _studentName = value; OnPropertyChanged(); }
-        }
-
-        public string StudentLogin
-        {
-            get => _studentLogin;
-            set { _studentLogin = value; OnPropertyChanged(); }
-        }
-
-        public string StudentPassword
-        {
-            get => _studentPassword;
-            set { _studentPassword = value; OnPropertyChanged(); }
-        }
-
-        public string TeacherName
-        {
-            get => _teacherName;
-            set { _teacherName = value; OnPropertyChanged(); }
-        }
-
-        public string TeacherLogin
-        {
-            get => _teacherLogin;
-            set { _teacherLogin = value; OnPropertyChanged(); }
-        }
-
-        public string TeacherPassword
-        {
-            get => _teacherPassword;
-            set { _teacherPassword = value; OnPropertyChanged(); }
-        }
-
-        public ICommand AddDisciplineCommand { get; }
-        public ICommand AddCourseCommand { get; }
-        public ICommand AddStudentCommand { get; }
-        public ICommand AddTeacherCommand { get; }
-
-        public AdminViewModel()
-        {
-            LoadData();
-
-            AddDisciplineCommand = new RelayCommand(OnAddDiscipline);
-            AddCourseCommand = new RelayCommand(OnAddCourse);
-            AddStudentCommand = new RelayCommand(OnAddStudent);
-            AddTeacherCommand = new RelayCommand(OnAddTeacher);
-        }
-
-        private void LoadData()
-        {
-            Disciplines = new ObservableCollection<Discipline>(_context.Disciplines.ToList());
-            Courses = new ObservableCollection<Course>(_context.Courses.Include(c => c.Discipline).ToList());
-
-            Students = new ObservableCollection<Student>(_context.Students.ToList());
-            Teachers = new ObservableCollection<Teacher>(_context.Teachers.ToList());
-        }
-
-        private void OnAddDiscipline(object obj)
-        {
-            if (string.IsNullOrWhiteSpace(DisciplineName)) return;
+            if (!CanAddDiscipline()) return;
 
             var discipline = new Discipline
             {
-                Name = DisciplineName.Trim(),
-                Description = string.IsNullOrWhiteSpace(DisciplineDescription) ? null : DisciplineDescription.Trim()
+                Name = DisciplineName,
+                Description = DisciplineDescription
             };
 
-            _context.Disciplines.Add(discipline);
-            _context.SaveChanges();
+            _dbContext.Disciplines.Add(discipline);
+            await _dbContext.SaveChangesAsync();
+
             Disciplines.Add(discipline);
 
-            DisciplineName = "";
-            DisciplineDescription = "";
+            DisciplineName = string.Empty;
+            DisciplineDescription = string.Empty;
         }
 
-        private void OnAddCourse(object obj)
+        public async Task AddCourseAsync()
         {
-            if (SelectedDiscipline == null || string.IsNullOrWhiteSpace(CourseName)) return;
+            if (!CanAddCourse()) return;
 
             var course = new Course
             {
-                Name = CourseName.Trim(),
-                Description = string.IsNullOrWhiteSpace(CourseDescription) ? null : CourseDescription.Trim(),
-                DisciplineId = SelectedDiscipline.Id,
-                TeacherId = 1 // Пример: текущий админ создаёт курс
+                Name = CourseName,
+                Description = CourseDescription,
+                DisciplineId = SelectedDiscipline.Id
             };
 
-            _context.Courses.Add(course);
-            _context.SaveChanges();
+            _dbContext.Courses.Add(course);
+            await _dbContext.SaveChangesAsync();
+
             Courses.Add(course);
 
-            CourseName = "";
-            CourseDescription = "";
+            CourseName = string.Empty;
+            CourseDescription = string.Empty;
         }
 
-        private void OnAddStudent(object obj)
-        {
-            if (string.IsNullOrWhiteSpace(StudentLogin) || string.IsNullOrWhiteSpace(StudentName)) return;
-
-            var student = new Student
-            {
-                Name = StudentName.Trim(),
-                Login = StudentLogin.Trim(),
-                Password = BCrypt.Net.BCrypt.HashPassword(StudentPassword.Trim()) // Хешируем пароль
-            };
-
-            _context.Students.Add(student);
-            _context.SaveChanges();
-            Students.Add(student);
-
-            StudentName = "";
-            StudentLogin = "";
-            StudentPassword = "";
-        }
-
-        private void OnAddTeacher(object obj)
-        {
-            if (string.IsNullOrWhiteSpace(TeacherLogin) || string.IsNullOrWhiteSpace(TeacherName)) return;
-
-            var teacher = new Teacher
-            {
-                Name = TeacherName.Trim(),
-                Login = TeacherLogin.Trim(),
-                Password = BCrypt.Net.BCrypt.HashPassword(TeacherPassword.Trim())
-            };
-
-            _context.Teachers.Add(teacher);
-            _context.SaveChanges();
-            Teachers.Add(teacher);
-
-            TeacherName = "";
-            TeacherLogin = "";
-            TeacherPassword = "";
-        }
-
+        // INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            AddDisciplineCommand?.RaiseCanExecuteChanged();
+            AddCourseCommand?.RaiseCanExecuteChanged();
+        }
     }
 }

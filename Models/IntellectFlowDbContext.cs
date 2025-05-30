@@ -111,6 +111,20 @@ namespace IntellectFlow.Models
                 .WithMany()
                 .HasForeignKey(l => l.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Указываем поведение при удалении User — запрещаем каскадное удаление
+            modelBuilder.Entity<Teacher>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // или NoAction
+
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // или NoAction
+
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
