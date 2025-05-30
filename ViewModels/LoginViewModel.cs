@@ -29,7 +29,6 @@ public class LoginViewModel : INotifyPropertyChanged
         LoginCommand = new RelayCommand<string>(ExecuteLogin);
     }
 
-
     private async void ExecuteLogin(string password)
     {
         try
@@ -37,13 +36,13 @@ public class LoginViewModel : INotifyPropertyChanged
             var roles = await _authService.Login(Email, password);
             if (roles != null)
             {
-                // Закрываем окно логина
                 Application.Current.Windows.OfType<LoginView>().FirstOrDefault()?.Close();
 
-                // Открываем главное окно
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
 
-                // Подставляем содержимое в зависимости от роли
+                // 💡 Обязательно вызываем Initialize
+                mainWindow.Initialize(_serviceProvider);
+
                 var primaryRole = roles.Contains("Admin") ? "Admin" :
                                   roles.Contains("Teacher") ? "Teacher" :
                                   "Student";

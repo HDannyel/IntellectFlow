@@ -3,7 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="IntellectFlow" Height="600" Width="900">
     <Grid>
-        <!-- Здесь будет динамически загружаться нужный UserControl -->
-        <ContentControl x:Name="ContentControlArea"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- для шапки -->
+            <RowDefinition Height="*"/>    <!-- для контента -->
+        </Grid.RowDefinitions>
+
+        <!-- Шапка -->
+        <DockPanel Background="#EEE" Grid.Row="0">
+            <TextBlock x:Name="RoleTextBlock"
+                       FontWeight="Bold"
+                       FontSize="14"
+                       Foreground="DarkSlateGray"/>
+        </DockPanel>
+
+        <!-- Основной контент -->
+        <ContentControl x:Name="ContentControlArea" Grid.Row="1"/>
     </Grid>
 </Window>

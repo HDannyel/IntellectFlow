@@ -1,22 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IntellectFlow.Views
 {
     public partial class MainWindow : Window
     {
-        private readonly IServiceProvider _serviceProvider;
+        private IServiceProvider _serviceProvider;
 
-        // Конструктор по умолчанию для WPF (нужен для XAML)
-        public MainWindow() : this(null)
-        {
-        }
-
-        // Основной конструктор с DI
-        public MainWindow(IServiceProvider serviceProvider)
+        public MainWindow()
         {
             InitializeComponent();
+        }
+
+        public void Initialize(IServiceProvider serviceProvider)
+        {
             _serviceProvider = serviceProvider;
         }
 
@@ -25,19 +23,22 @@ namespace IntellectFlow.Views
             if (_serviceProvider == null)
                 throw new InvalidOperationException("ServiceProvider не инициализирован");
 
+            // Отображаем текущую роль в UI
+            RoleTextBlock.Text = $"Вы вошли как: {role}";
+
             switch (role)
             {
                 case "Admin":
                     var adminView = _serviceProvider.GetRequiredService<AdminView>();
-                    Content = adminView;
+                    ContentControlArea.Content = adminView;
                     break;
                 case "Teacher":
                     var teacherView = _serviceProvider.GetRequiredService<TeacherView>();
-                    Content = teacherView;
+                    ContentControlArea.Content = teacherView;
                     break;
                 default:
                     var studentView = _serviceProvider.GetRequiredService<StudentView>();
-                    Content = studentView;
+                    ContentControlArea.Content = studentView;
                     break;
             }
         }
