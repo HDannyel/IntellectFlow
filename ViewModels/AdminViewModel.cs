@@ -28,23 +28,32 @@ namespace IntellectFlow.ViewModels
 
         private async Task LoadDataAsync()
         {
-            var students = await _dbContext.Users.ToListAsync();
+            var students = await _dbContext.Students.Include(s => s.User).ToListAsync();
+            var teachers = await _dbContext.Teachers.Include(t => t.User).ToListAsync();
+
             var disciplines = await _dbContext.Disciplines.ToListAsync();
             var courses = await _dbContext.Courses.ToListAsync();
 
             // Обновляем коллекции в UI потоке
             Application.Current.Dispatcher.Invoke(() =>
             {
-                
-                Disciplines.Clear();
-                foreach (var d in disciplines) Disciplines.Add(d);
+                Students.Clear();
+                foreach (var s in students)
+                    Students.Add(s);
+
+                Teachers.Clear();
+                foreach (var t in teachers)
+                    Teachers.Add(t);
 
                 Disciplines.Clear();
-                foreach (var d in disciplines) Disciplines.Add(d);
+                foreach (var d in disciplines)
+                    Disciplines.Add(d);
 
                 Courses.Clear();
-                foreach (var c in courses) Courses.Add(c);
+                foreach (var c in courses)
+                    Courses.Add(c);
             });
+
         }
 
         // Коллекции

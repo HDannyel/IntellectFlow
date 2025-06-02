@@ -1,6 +1,8 @@
 ﻿using IntellectFlow.DataModel;
 using IntellectFlow.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace IntellectFlow.Helpers
 {
@@ -24,7 +26,7 @@ namespace IntellectFlow.Helpers
             {
                 StudentId = studentId,
                 CourseId = courseId,
-                EnrolledDate = DateTime.UtcNow
+                EnrolledDate = System.DateTime.UtcNow
             };
 
             _context.StudentCourses.Add(studentCourse);

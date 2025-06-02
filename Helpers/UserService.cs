@@ -1,9 +1,12 @@
 ﻿using IntellectFlow.DataModel;
 using IntellectFlow.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace IntellectFlow.Helpers
 {
@@ -38,6 +41,17 @@ namespace IntellectFlow.Helpers
 
             await _userManager.AddToRoleAsync(user, "Teacher");
 
+            // Создаём запись в таблице Teacher
+            var teacher = new Teacher
+            {
+                UserId = user.Id,
+                Name = name,
+                MiddleName = middleName,
+                LastName = lastName
+            };
+            _context.Teachers.Add(teacher);
+            await _context.SaveChangesAsync();
+
             return (login, password);
         }
 
@@ -61,16 +75,26 @@ namespace IntellectFlow.Helpers
 
             await _userManager.AddToRoleAsync(user, "Student");
 
+            // Создаём запись в таблице Student
+            var student = new Student
+            {
+                UserId = user.Id,
+                Name = name,
+                MiddleName = middleName,
+                LastName = lastName
+            };
+            _context.Students.Add(student);
+            await _context.SaveChangesAsync();
+
             return (login, password);
         }
 
-
         private string GenerateLogin(string name, string lastName)
         {
-            // Удаляем не-латинские символы, пробелы и спецсимволы
             string clean = $"{Transliterate(lastName)}{Transliterate(name)}";
             return clean.ToLower();
         }
+
         private string Transliterate(string input)
         {
             Dictionary<char, string> map = new Dictionary<char, string>
@@ -117,17 +141,63 @@ namespace IntellectFlow.Helpers
                 if (map.TryGetValue(c, out var latin))
                     sb.Append(latin);
                 else if (char.IsLetterOrDigit(c))
-                    sb.Append(c); // оставить латинские буквы и цифры
-                                  // игнорировать всё остальное
+                    sb.Append(c);
             }
 
             return sb.ToString();
         }
 
-
         private string GeneratePassword()
         {
-            return "DefaultPass123"; // Можно использовать генератор случайных паролей
+            return "DefaultPass123"; // Можно заменить генератором паролей
         }
+        public async Task DeleteUserAsync(string login)
+        {
+            var user = await _userManager.FindByNameAsync(login);
+            if (user == null)
+                throw new Exception("Пользователь не найден");
+
+            // Удаляем связанные сущности, если нужны (например, Teacher/Student)
+            var teacher = _context.Teachers.FirstOrDefault(t => t.UserId == user.Id);
+            if (teacher != null)
+            {
+                _context.Teachers.Remove(teacher);
+            }
+
+            var student = _context.Students.FirstOrDefault(s => s.UserId == user.Id);
+            if (student != null)
+            {
+                _context.Students.Remove(student);
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            await _context.SaveChangesAsync();
+        }
+
+        // Удаление курса по id
+        public async Task DeleteCourseAsync(int courseId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null)
+                throw new Exception("Курс не найден");
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+        }
+
+        // Удаление дисциплины по id
+        public async Task DeleteDisciplineAsync(int disciplineId)
+        {
+            var discipline = await _context.Disciplines.FindAsync(disciplineId);
+            if (discipline == null)
+                throw new Exception("Дисциплина не найдена");
+
+            _context.Disciplines.Remove(discipline);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

@@ -1,9 +1,7 @@
 ﻿using IntellectFlow.DataModel;
+using IntellectFlow.Models; // где DbContext
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IntellectFlow.Helpers
@@ -12,17 +10,27 @@ namespace IntellectFlow.Helpers
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleService _roleService;
+        private readonly IntellectFlowDbContext _dbContext;
 
-        public RegistrationService(UserManager<User> userManager, RoleService roleService)
+        public RegistrationService(UserManager<User> userManager, RoleService roleService, IntellectFlowDbContext dbContext)
         {
             _userManager = userManager;
             _roleService = roleService;
+            _dbContext = dbContext;
         }
 
-        public async Task<bool> RegisterUserAsync(string email, string password, string roleName)
+        public async Task<bool> RegisterUserAsync(string email, string password, string roleName, string name, string middleName, string lastName)
         {
-            // Создаем пользователя
-            var user = new User { UserName = email, Email = email };
+            // Создаем пользователя Identity
+            var user = new User
+            {
+                UserName = email,
+                Email = email,
+                Name = name,
+                MiddleName = middleName,
+                LastName = lastName
+            };
+
             var createResult = await _userManager.CreateAsync(user, password);
             if (!createResult.Succeeded)
             {
@@ -30,24 +38,44 @@ namespace IntellectFlow.Helpers
                 return false;
             }
 
-            // Создаем роли, если их еще нет
             await _roleService.EnsureRolesCreated();
 
-            // Назначаем роль пользователю
-            if (new[] { "Admin", "Teacher", "Student" }.Contains(roleName))
+            // Назначаем роль
+            var validRoles = new[] { "Admin", "Teacher", "Student" };
+            if (!validRoles.Contains(roleName))
+                roleName = "Student"; // по умолчанию студент
+
+            var roleAssignResult = await _roleService.AssignRoleToUser(user, roleName);
+            if (!roleAssignResult.Succeeded)
+                return false;
+
+            // Создаем запись в таблице Student или Teacher, в зависимости от роли
+            if (roleName == "Student")
             {
-                var roleAssignResult = await _roleService.AssignRoleToUser(user, roleName);
-                if (!roleAssignResult.Succeeded)
-                    return false;
+                var student = new Student
+                {
+                    UserId = user.Id,
+                    Name = name,
+                    MiddleName = middleName,
+                    LastName = lastName
+                };
+                _dbContext.Students.Add(student);
             }
-            else
+            else if (roleName == "Teacher")
             {
-                // Если роль невалидна — назначаем Student по умолчанию
-                await _roleService.AssignRoleToUser(user, "Student");
+                var teacher = new Teacher
+                {
+                    UserId = user.Id,
+                    Name = name,
+                    MiddleName = middleName,
+                    LastName = lastName
+                };
+                _dbContext.Teachers.Add(teacher);
             }
+
+            await _dbContext.SaveChangesAsync();
 
             return true;
         }
     }
-
 }

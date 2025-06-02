@@ -2,7 +2,7 @@
 
 namespace IntellectFlow.DataModel
 {
-    public class User : IdentityUser<int> // Используем int как тип ID
+    public class User : IdentityUser<int> // int — тип ключа
     {
         public string Name { get; set; } = null!;
         public string? MiddleName { get; set; }
