@@ -3,18 +3,9 @@ using IntellectFlow.Helpers;
 using IntellectFlow.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace IntellectFlow.Views
 {
@@ -32,16 +23,15 @@ namespace IntellectFlow.Views
             DataContext = _serviceProvider.GetRequiredService<AdminViewModel>();
         }
 
-
         private void DisciplinesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var listBox = sender as ListBox;
             if (listBox?.SelectedItem is Discipline selectedDiscipline)
             {
-                // Например: показать информацию о дисциплине
                 MessageBox.Show($"Вы выбрали дисциплину: {selectedDiscipline.Name}");
             }
         }
+
         private async void AddStudent_Click(object sender, RoutedEventArgs e)
         {
             var addStudentWindow = new AddStudentWindow();
@@ -73,7 +63,6 @@ namespace IntellectFlow.Views
                 }
             }
         }
-
 
         private async void AddTeacher_Click(object sender, RoutedEventArgs e)
         {
@@ -107,6 +96,59 @@ namespace IntellectFlow.Views
             }
         }
 
+        private async void DeleteTeacher_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is AdminViewModel vm && vm.SelectedTeacher != null)
+            {
+                var teacher = vm.SelectedTeacher;
+
+                var userService = _serviceProvider.GetRequiredService<UserService>();
+                try
+                {
+                    await userService.DeleteUserAsync(teacher.Name); // Передаем логин пользователя
+
+                    vm.Teachers.Remove(teacher);
+                    vm.SelectedTeacher = null;
+
+                    MessageBox.Show("Преподаватель успешно удален.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при удалении преподавателя: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Выберите преподавателя для удаления.");
+            }
+        }
+
+        private async void DeleteStudent_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is AdminViewModel vm && vm.SelectedStudent != null)
+            {
+                var student = vm.SelectedStudent;
+
+                var userService = _serviceProvider.GetRequiredService<UserService>();
+                try
+                {
+                    await userService.DeleteUserAsync(student.Name);
+
+                    vm.Students.Remove(student);
+                    vm.SelectedStudent = null;
+
+                    MessageBox.Show("Студент успешно удален.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при удалении студента: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Выберите студента для удаления.");
+            }
+        }
 
     }
 }

@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="601.25" d:DesignWidth="800">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -28,7 +28,14 @@
                     Command="{Binding AddDisciplineCommand}"
                     HorizontalAlignment="Left"
                     Padding="10,5"
-                    Margin="0,0,0,20"/>
+                    Margin="0,0,0,10"/>
+
+            <Button Content="Удалить выбранную дисциплину"
+                    Command="{Binding DeleteDisciplineCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="10,5"
+                    Margin="0,0,0,20"
+                    IsEnabled="{Binding SelectedDiscipline, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <TextBlock Text="Выберите дисциплину:" Margin="0,0,0,5"/>
             <ComboBox ItemsSource="{Binding Disciplines}"
@@ -48,17 +55,33 @@
                     Padding="10,5"
                     Margin="0,0,0,10"/>
 
+            <Button Content="Удалить выбранный курс"
+                    Command="{Binding DeleteCourseCommand}"
+                    HorizontalAlignment="Left"
+                    Padding="10,5"
+                    Margin="0,0,0,20"
+                    IsEnabled="{Binding SelectedCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
             <Button Content="Добавить преподавателя"
                     HorizontalAlignment="Left"
                     Padding="10,5"
                     Margin="0,10,0,0"
                     Click="AddTeacher_Click"/>
 
+
             <Button Content="Добавить студента"
                     HorizontalAlignment="Left"
                     Padding="10,5"
                     Margin="0,5,0,0"
                     Click="AddStudent_Click"/>
+
+            <!-- Общая кнопка удаления -->
+            <Button Content="Удалить пользователя"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Bottom"
+                                Width="150"
+                                Margin="0,10,0,0"
+                                Command="{Binding DeleteUserCommand}"/>
         </StackPanel>
 
         <!-- Правая панель с данными -->
@@ -96,22 +119,20 @@
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Преподаватели" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
                             <ListBox ItemsSource="{Binding Teachers}"
-                     DisplayMemberPath="FullName"
-                     SelectedItem="{Binding SelectedTeacher}"
-                     Margin="0,0,10,0"/>
+                                     DisplayMemberPath="FullName"
+                                     SelectedItem="{Binding SelectedTeacher}"
+                                     Margin="0,0,10,0"/>
                         </StackPanel>
 
                         <!-- Студенты -->
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Студенты" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
                             <ListBox ItemsSource="{Binding Students}"
-                     DisplayMemberPath="FullName"
-                     SelectedItem="{Binding SelectedStudent}"/>
+                                     DisplayMemberPath="FullName"
+                                     SelectedItem="{Binding SelectedStudent}"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
-
-
             </TabControl>
         </Grid>
     </Grid>

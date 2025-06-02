@@ -151,6 +151,8 @@ namespace IntellectFlow.Helpers
         {
             return "DefaultPass123"; // Можно заменить генератором паролей
         }
+
+
         public async Task DeleteUserAsync(string login)
         {
             var user = await _userManager.FindByNameAsync(login);

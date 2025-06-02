@@ -4,26 +4,32 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using IntellectFlow.DataModel;
 using IntellectFlow.Helpers;
-using IntellectFlow.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Windows;
-
+using IntellectFlow.Models;
+using System.Linq;
 
 namespace IntellectFlow.ViewModels
 {
     public class AdminViewModel : INotifyPropertyChanged
     {
         private readonly IntellectFlowDbContext _dbContext;
+        private readonly UserService _userService;
 
-        public AdminViewModel(IntellectFlowDbContext dbContext)
+        public AdminViewModel(IntellectFlowDbContext dbContext, UserService userService)
         {
             _dbContext = dbContext;
-            // Запускаем асинхронную загрузку, но в конструкторе нельзя использовать await напрямую
-            // Поэтому запускаем в фоне:
+            _userService = userService;
+
             Task.Run(async () => await LoadDataAsync());
 
             AddDisciplineCommand = new RelayCommand(async _ => await AddDisciplineAsync(), _ => CanAddDiscipline());
             AddCourseCommand = new RelayCommand(async _ => await AddCourseAsync(), _ => CanAddCourse());
+
+            DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => CanDeleteUser());
+
+            DeleteDisciplineCommand = new RelayCommand(async _ => await DeleteDisciplineAsync(), _ => CanDeleteDiscipline());
+            DeleteCourseCommand = new RelayCommand(async _ => await DeleteCourseAsync(), _ => CanDeleteCourse());
         }
 
         private async Task LoadDataAsync()
@@ -34,7 +40,6 @@ namespace IntellectFlow.ViewModels
             var disciplines = await _dbContext.Disciplines.ToListAsync();
             var courses = await _dbContext.Courses.ToListAsync();
 
-            // Обновляем коллекции в UI потоке
             Application.Current.Dispatcher.Invoke(() =>
             {
                 Students.Clear();
@@ -53,7 +58,6 @@ namespace IntellectFlow.ViewModels
                 foreach (var c in courses)
                     Courses.Add(c);
             });
-
         }
 
         // Коллекции
@@ -63,20 +67,6 @@ namespace IntellectFlow.ViewModels
         public ObservableCollection<Course> Courses { get; } = new ObservableCollection<Course>();
 
         // Выбранные элементы
-        private Student _selectedStudent;
-        public Student SelectedStudent
-        {
-            get => _selectedStudent;
-            set
-            {
-                if (_selectedStudent != value)
-                {
-                    _selectedStudent = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
         private Teacher _selectedTeacher;
         public Teacher SelectedTeacher
         {
@@ -87,6 +77,22 @@ namespace IntellectFlow.ViewModels
                 {
                     _selectedTeacher = value;
                     OnPropertyChanged();
+                    DeleteUserCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        private Student _selectedStudent;
+        public Student SelectedStudent
+        {
+            get => _selectedStudent;
+            set
+            {
+                if (_selectedStudent != value)
+                {
+                    _selectedStudent = value;
+                    OnPropertyChanged();
+                    DeleteUserCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -102,6 +108,7 @@ namespace IntellectFlow.ViewModels
                     _selectedDiscipline = value;
                     OnPropertyChanged();
                     AddCourseCommand.RaiseCanExecuteChanged();
+                    DeleteDisciplineCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -116,6 +123,7 @@ namespace IntellectFlow.ViewModels
                 {
                     _selectedCourse = value;
                     OnPropertyChanged();
+                    DeleteCourseCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -180,11 +188,23 @@ namespace IntellectFlow.ViewModels
         // Команды
         public RelayCommand AddDisciplineCommand { get; }
         public RelayCommand AddCourseCommand { get; }
+        public RelayCommand DeleteUserCommand { get; }
 
+        public RelayCommand DeleteDisciplineCommand { get; }
+        public RelayCommand DeleteCourseCommand { get; }
+
+        // Проверки CanExecute
         private bool CanAddDiscipline() => !string.IsNullOrWhiteSpace(DisciplineName);
 
         private bool CanAddCourse() => !string.IsNullOrWhiteSpace(CourseName) && SelectedDiscipline != null;
 
+        private bool CanDeleteUser() => SelectedStudent != null || SelectedTeacher != null;
+
+        private bool CanDeleteDiscipline() => SelectedDiscipline != null;
+
+        private bool CanDeleteCourse() => SelectedCourse != null;
+
+        // Методы команд
         public async Task AddDisciplineAsync()
         {
             if (!CanAddDiscipline()) return;
@@ -224,6 +244,88 @@ namespace IntellectFlow.ViewModels
             CourseDescription = string.Empty;
         }
 
+        public async Task DeleteUserAsync()
+        {
+            string userNameToDelete = null;
+
+            if (SelectedTeacher != null)
+                userNameToDelete = SelectedTeacher.User?.UserName;
+
+            else if (SelectedStudent != null)
+                userNameToDelete = SelectedStudent.User?.UserName;
+
+            if (string.IsNullOrEmpty(userNameToDelete))
+            {
+                MessageBox.Show("Пользователь не выбран или у пользователя отсутствует логин");
+                return;
+            }
+
+            try
+            {
+                await _userService.DeleteUserAsync(userNameToDelete);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (SelectedTeacher != null)
+                    {
+                        Teachers.Remove(SelectedTeacher);
+                        SelectedTeacher = null;
+                    }
+                    else if (SelectedStudent != null)
+                    {
+                        Students.Remove(SelectedStudent);
+                        SelectedStudent = null;
+                    }
+                });
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении пользователя: {ex.Message}");
+            }
+        }
+
+        public async Task DeleteDisciplineAsync()
+        {
+            if (!CanDeleteDiscipline()) return;
+
+            var discipline = SelectedDiscipline;
+
+            // Проверяем, есть ли связанные курсы (опционально — запретить удаление, если есть связанные данные)
+            var hasCourses = await _dbContext.Courses.AnyAsync(c => c.DisciplineId == discipline.Id);
+            if (hasCourses)
+            {
+                MessageBox.Show("Нельзя удалить дисциплину, так как есть связанные курсы.");
+                return;
+            }
+
+            _dbContext.Disciplines.Remove(discipline);
+            await _dbContext.SaveChangesAsync();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Disciplines.Remove(discipline);
+                SelectedDiscipline = null;
+            });
+        }
+
+        public async Task DeleteCourseAsync()
+        {
+            if (!CanDeleteCourse()) return;
+
+            var course = SelectedCourse;
+
+            // Здесь можно добавить проверку на связанные данные, если нужно
+
+            _dbContext.Courses.Remove(course);
+            await _dbContext.SaveChangesAsync();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Courses.Remove(course);
+                SelectedCourse = null;
+            });
+        }
+
         // INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -231,6 +333,9 @@ namespace IntellectFlow.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             AddDisciplineCommand?.RaiseCanExecuteChanged();
             AddCourseCommand?.RaiseCanExecuteChanged();
+            DeleteUserCommand?.RaiseCanExecuteChanged();
+            DeleteDisciplineCommand?.RaiseCanExecuteChanged();
+            DeleteCourseCommand?.RaiseCanExecuteChanged();
         }
     }
 }
