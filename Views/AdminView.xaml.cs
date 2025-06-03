@@ -96,59 +96,7 @@ namespace IntellectFlow.Views
             }
         }
 
-        private async void DeleteTeacher_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is AdminViewModel vm && vm.SelectedTeacher != null)
-            {
-                var teacher = vm.SelectedTeacher;
-
-                var userService = _serviceProvider.GetRequiredService<UserService>();
-                try
-                {
-                    await userService.DeleteUserAsync(teacher.Name); // Передаем логин пользователя
-
-                    vm.Teachers.Remove(teacher);
-                    vm.SelectedTeacher = null;
-
-                    MessageBox.Show("Преподаватель успешно удален.");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при удалении преподавателя: {ex.Message}");
-                }
-            }
-            else
-            {
-                MessageBox.Show("Выберите преподавателя для удаления.");
-            }
-        }
-
-        private async void DeleteStudent_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is AdminViewModel vm && vm.SelectedStudent != null)
-            {
-                var student = vm.SelectedStudent;
-
-                var userService = _serviceProvider.GetRequiredService<UserService>();
-                try
-                {
-                    await userService.DeleteUserAsync(student.Name);
-
-                    vm.Students.Remove(student);
-                    vm.SelectedStudent = null;
-
-                    MessageBox.Show("Студент успешно удален.");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при удалении студента: {ex.Message}");
-                }
-            }
-            else
-            {
-                MessageBox.Show("Выберите студента для удаления.");
-            }
-        }
+       
 
     }
 }

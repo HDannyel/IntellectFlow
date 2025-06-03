@@ -18,6 +18,12 @@ namespace IntellectFlow.Views
         {
             _serviceProvider = serviceProvider;
         }
+        private int GetCurrentTeacherId()
+        {
+            // Тут логика получения ID, например, из текущего пользователя или сессии
+            return 123; // Пример жестко заданного ID
+        }
+
 
         public void SetContentForRole(string role)
         {
@@ -26,12 +32,20 @@ namespace IntellectFlow.Views
 
             RoleTextBlock.Text = $"Вы вошли как: {role}";
 
-            ContentControlArea.Content = role switch
+            if (role == "Teacher")
             {
-                "Admin" => _serviceProvider.GetRequiredService<AdminView>(),
-                "Teacher" => _serviceProvider.GetRequiredService<TeacherView>(),
-                _ => _serviceProvider.GetRequiredService<StudentView>(),
-            };
+                int teacherId = GetCurrentTeacherId(); // Получи текущий ID учителя (свой метод)
+                ContentControlArea.Content = new TeacherView(_serviceProvider, teacherId);
+            }
+            else if (role == "Admin")
+            {
+                ContentControlArea.Content = _serviceProvider.GetRequiredService<AdminView>();
+            }
+            else
+            {
+                ContentControlArea.Content = _serviceProvider.GetRequiredService<StudentView>();
+            }
         }
+
     }
 }

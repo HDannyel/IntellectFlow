@@ -9,15 +9,18 @@ public class AuthService
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly INavigationService _navigationService;
+    private readonly IUserContext _userContext;
 
     public AuthService(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IUserContext userContext)  // добавляем
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _navigationService = navigationService;
+        _userContext = userContext; // сохраняем
     }
 
     public async Task<IList<string>> Login(string email, string password)
@@ -42,6 +45,9 @@ public class AuthService
         var roles = await _userManager.GetRolesAsync(user);
         Debug.WriteLine($"Роли пользователя: {string.Join(", ", roles)}");
 
+        // Записываем в UserContext
+        _userContext.SetUser(user.Id, user.UserName, roles.FirstOrDefault() ?? string.Empty);
+
         return roles;
     }
 
@@ -49,12 +55,9 @@ public class AuthService
 
     public async Task ShowMainWindow()
     {
-        var user = await _signInManager.UserManager.GetUserAsync(_signInManager.Context.User);
-        if (user == null) return;
+        var role = _userContext.UserRole;
 
-        var role = await _userManager.GetRolesAsync(user);
-
-        switch (role.FirstOrDefault())
+        switch (role)
         {
             case "Admin":
                 _navigationService.NavigateTo<AdminView>();
@@ -67,4 +70,5 @@ public class AuthService
                 break;
         }
     }
+
 }

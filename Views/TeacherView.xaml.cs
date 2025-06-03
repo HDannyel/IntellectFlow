@@ -1,4 +1,5 @@
 ﻿using IntellectFlow.DataModel;
+using IntellectFlow.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,10 +21,12 @@ namespace IntellectFlow.Views
     /// </summary>
     public partial class TeacherView : UserControl
     {
-        public TeacherView()
+        public TeacherView(IServiceProvider serviceProvider, int teacherId)
         {
-            InitializeComponent();
+            InitializeComponent();  
+            DataContext = new TeacherViewModel(teacherId);
         }
+
 
         private void CoursesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

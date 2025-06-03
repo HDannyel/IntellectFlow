@@ -40,6 +40,35 @@ namespace IntellectFlow.Helpers
 
             return course;
         }
+        public async Task DeleteCourseAsync(int courseId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course != null)
+            {
+                _context.Courses.Remove(course);
+                await _context.SaveChangesAsync();
+            }
+        }
+        public async Task DeleteDisciplineAsync(int disciplineId)
+        {
+            var discipline = await _context.Disciplines.FindAsync(disciplineId);
+            if (discipline != null)
+            {
+                _context.Disciplines.Remove(discipline);
+                await _context.SaveChangesAsync();
+            }
+        }
+        public async Task RemoveStudentFromCourseAsync(int studentId, int courseId)
+        {
+            var studentCourse = await _context.StudentCourses
+                .FirstOrDefaultAsync(sc => sc.StudentId == studentId && sc.CourseId == courseId);
+
+            if (studentCourse != null)
+            {
+                _context.StudentCourses.Remove(studentCourse);
+                await _context.SaveChangesAsync();
+            }
+        }
 
         public async Task AddStudentToCourseAsync(int studentId, int courseId)
         {
