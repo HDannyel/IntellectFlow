@@ -11,7 +11,9 @@ namespace IntellectFlow.Helpers
         int UserId { get; }
         string UserName { get; }
         string UserRole { get; }
-        void SetUser(int userId, string userName, string userRole);
+        int? TeacherId { get; }              // <-- добавили TeacherId
+
+        void SetUser(int userId, string userName, string userRole, int? teacherId = null);
     }
 
 

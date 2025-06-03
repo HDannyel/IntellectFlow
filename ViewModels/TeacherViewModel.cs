@@ -1,276 +1,265 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using IntellectFlow.DataModel;
-using IntellectFlow.Models;
-using Microsoft.EntityFrameworkCore;
+﻿    using IntellectFlow.DataModel;
+    using IntellectFlow.Models;
+    using System;
+    using System.Collections.ObjectModel;
+    using System.ComponentModel;
+    using System.Linq;
+    using System.Windows.Input;
 
-namespace IntellectFlow.ViewModels
-{
-    public class TeacherViewModel : INotifyPropertyChanged
+    namespace IntellectFlow.ViewModels
     {
-        private readonly IntellectFlowDbContext _context = new();
-        private readonly int _teacherId;
-
-        // ───────────────────────────────────────────  Коллекции
-        public ObservableCollection<Discipline> Disciplines { get; } = new();
-        public ObservableCollection<Course> Courses { get; } = new();
-        public ObservableCollection<Student> AvailableStudents { get; } = new();
-        public ObservableCollection<Student> StudentsInCourse { get; } = new();
-
-        // ───────────────────────────────────────────  Выборы
-        private Discipline _selectedDiscipline;
-        public Discipline SelectedDiscipline
+        public class TeacherViewModel : INotifyPropertyChanged
         {
-            get => _selectedDiscipline;
-            set
+            private readonly IntellectFlowDbContext _db;
+
+            public TeacherViewModel(IntellectFlowDbContext db, int teacherId)
             {
-                if (_selectedDiscipline != value)
+                _db = db ?? throw new ArgumentNullException(nameof(db));
+                TeacherId = teacherId;
+
+                LoadData();
+
+                AddCourseCommand = new RelayCommand(_ => AddCourse(), _ => CanAddCourse());
+                AddStudentToCourseCommand = new RelayCommand(_ => AddStudentToCourse(), _ => SelectedStudentToAdd != null && SelectedCourse != null);
+                RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudentFromCourse(), _ => SelectedStudentInCourse != null && SelectedCourse != null);
+            }
+
+            public int TeacherId { get; }
+
+            // Коллекции для привязки
+            public ObservableCollection<Discipline> AllDisciplines { get; } = new ObservableCollection<Discipline>();
+            public ObservableCollection<Discipline> MyDisciplines { get; } = new ObservableCollection<Discipline>();
+            public ObservableCollection<Course> MyCourses { get; } = new ObservableCollection<Course>();
+            public ObservableCollection<Student> StudentsInCourse { get; } = new ObservableCollection<Student>();
+            public ObservableCollection<Student> AvailableStudents { get; } = new ObservableCollection<Student>();
+
+            // Выбранные элементы
+            private Discipline? _selectedDiscipline;
+            public Discipline? SelectedDiscipline
+            {
+                get => _selectedDiscipline;
+                set
                 {
-                    _selectedDiscipline = value;
-                    OnPropertyChanged();
-                    RefreshCourses();
+                    if (_selectedDiscipline != value)
+                    {
+                        _selectedDiscipline = value;
+                        OnPropertyChanged(nameof(SelectedDiscipline));
+                        UpdateAvailableCourses();
+
+                        // Обновляем состояние кнопки "Добавить курс"
+                        (AddCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    }
                 }
             }
-        }
 
-        private Course _selectedCourse;
-        public Course SelectedCourse
-        {
-            get => _selectedCourse;
-            set
+
+            private Course? _selectedCourse;
+            public Course? SelectedCourse
             {
-                if (_selectedCourse != value)
+                get => _selectedCourse;
+                set
                 {
-                    _selectedCourse = value;
-                    OnPropertyChanged();
-                    RefreshStudentsInCourse();
+                    if (_selectedCourse != value)
+                    {
+                        _selectedCourse = value;
+                        OnPropertyChanged(nameof(SelectedCourse));
+                        LoadStudentsInCourse();
+                        UpdateAvailableStudents();
+                    }
                 }
             }
-        }
 
-        private Student _selectedStudentToAdd;
-        public Student SelectedStudentToAdd
-        {
-            get => _selectedStudentToAdd;
-            set { _selectedStudentToAdd = value; OnPropertyChanged(); }
-        }
-
-        private Student _selectedStudentInCourse;
-        public Student SelectedStudentInCourse
-        {
-            get => _selectedStudentInCourse;
-            set { _selectedStudentInCourse = value; OnPropertyChanged(); }
-        }
-
-        // ───────────────────────────────────────────  Поля ввода
-        private string _disciplineName;
-        public string DisciplineName
-        {
-            get => _disciplineName;
-            set { _disciplineName = value; OnPropertyChanged(); }
-        }
-
-        private string _disciplineDescription;
-        public string DisciplineDescription
-        {
-            get => _disciplineDescription;
-            set { _disciplineDescription = value; OnPropertyChanged(); }
-        }
-
-        private string _courseName;
-        public string CourseName
-        {
-            get => _courseName;
-            set { _courseName = value; OnPropertyChanged(); }
-        }
-
-        private string _courseDescription;
-        public string CourseDescription
-        {
-            get => _courseDescription;
-            set { _courseDescription = value; OnPropertyChanged(); }
-        }
-
-        // ───────────────────────────────────────────  Команды
-        public ICommand AddDisciplineCommand { get; }
-        public ICommand DeleteDisciplineCommand { get; }
-        public ICommand AddCourseCommand { get; }
-        public ICommand DeleteCourseCommand { get; }
-        public ICommand AddStudentToCourseCommand { get; }
-        public ICommand RemoveStudentFromCourseCommand { get; }
-
-        // ───────────────────────────────────────────  ctor
-        public TeacherViewModel(int teacherId)
-        {
-            _teacherId = teacherId;
-
-            AddDisciplineCommand = new RelayCommand(_ => AddDiscipline(), _ => !string.IsNullOrWhiteSpace(DisciplineName));
-            DeleteDisciplineCommand = new RelayCommand(_ => DeleteDiscipline(), _ => SelectedDiscipline != null);
-            AddCourseCommand = new RelayCommand(_ => AddCourse(), _ => SelectedDiscipline != null && !string.IsNullOrWhiteSpace(CourseName));
-            DeleteCourseCommand = new RelayCommand(_ => DeleteCourse(), _ => SelectedCourse != null);
-            AddStudentToCourseCommand = new RelayCommand(_ => AddStudent(), _ => SelectedCourse != null && SelectedStudentToAdd != null);
-            RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudent(), _ => SelectedCourse != null && SelectedStudentInCourse != null);
-
-            LoadInitialData();
-        }
-
-        // ───────────────────────────────────────────  Загрузка
-        private void LoadInitialData()
-        {
-            Disciplines.Clear();
-            foreach (var d in _context.Disciplines.ToList())
-                Disciplines.Add(d);
-
-            RefreshCourses();
-        }
-
-        private void RefreshCourses()
-        {
-            Courses.Clear();
-
-            if (SelectedDiscipline == null)
-                return;
-
-            var list = _context.Courses
-                               .Include(c => c.Discipline)
-                               .Where(c => c.TeacherId == _teacherId && c.DisciplineId == SelectedDiscipline.Id)
-                               .ToList();
-
-            foreach (var c in list)
-                Courses.Add(c);
-
-            SelectedCourse = null;
-        }
-
-        private void RefreshStudentsInCourse()
-        {
-            StudentsInCourse.Clear();
-            AvailableStudents.Clear();
-
-            if (SelectedCourse == null) return;
-
-            var inCourse = _context.StudentCourses
-                                   .Where(sc => sc.CourseId == SelectedCourse.Id)
-                                   .Select(sc => sc.Student)
-                                   .Include(s => s.User)
-                                   .ToList();
-
-            var notInCourse = _context.Students
-                                      .Include(s => s.User)
-                                      .Where(s => !_context.StudentCourses
-                                          .Any(sc => sc.StudentId == s.Id && sc.CourseId == SelectedCourse.Id))
-                                      .ToList();
-
-            foreach (var s in inCourse) StudentsInCourse.Add(s);
-            foreach (var s in notInCourse) AvailableStudents.Add(s);
-        }
-
-        // ───────────────────────────────────────────  Методы-команды
-        private void AddDiscipline()
-        {
-            var d = new Discipline
+            private Student? _selectedStudentInCourse;
+            public Student? SelectedStudentInCourse
             {
-                Name = DisciplineName.Trim(),
-                Description = string.IsNullOrWhiteSpace(DisciplineDescription) ? null : DisciplineDescription.Trim()
-            };
-            _context.Disciplines.Add(d);
-            _context.SaveChanges();
-
-            Disciplines.Add(d);
-            DisciplineName = DisciplineDescription = string.Empty;
-        }
-
-        private void DeleteDiscipline()
-        {
-            if (SelectedDiscipline == null) return;
-
-            // удаляем все курсы данной дисциплины преподавателя
-            var courses = _context.Courses
-                                  .Where(c => c.TeacherId == _teacherId && c.DisciplineId == SelectedDiscipline.Id)
-                                  .ToList();
-
-            _context.Courses.RemoveRange(courses);
-            _context.Disciplines.Remove(SelectedDiscipline);
-            _context.SaveChanges();
-
-            Disciplines.Remove(SelectedDiscipline);
-            SelectedDiscipline = null;
-            RefreshCourses();
-        }
-
-        private void AddCourse()
-        {
-            var c = new Course
-            {
-                Name = CourseName.Trim(),
-                Description = string.IsNullOrWhiteSpace(CourseDescription) ? null : CourseDescription.Trim(),
-                DisciplineId = SelectedDiscipline.Id,
-                TeacherId = _teacherId
-            };
-            _context.Courses.Add(c);
-            _context.SaveChanges();
-
-            Courses.Add(c);
-            CourseName = CourseDescription = string.Empty;
-        }
-
-        private void DeleteCourse()
-        {
-            if (SelectedCourse == null) return;
-
-            _context.Courses.Remove(SelectedCourse);
-            _context.SaveChanges();
-
-            Courses.Remove(SelectedCourse);
-            SelectedCourse = null;
-            StudentsInCourse.Clear();
-            RefreshStudentsInCourse();
-        }
-
-        private void AddStudent()
-        {
-            if (SelectedCourse == null || SelectedStudentToAdd == null) return;
-
-            var entry = new StudentCourse
-            {
-                CourseId = SelectedCourse.Id,
-                StudentId = SelectedStudentToAdd.Id,
-                EnrolledDate = DateTime.UtcNow
-            };
-            _context.StudentCourses.Add(entry);
-            _context.SaveChanges();
-
-            AvailableStudents.Remove(SelectedStudentToAdd);
-            StudentsInCourse.Add(SelectedStudentToAdd);
-            SelectedStudentToAdd = null;
-        }
-
-        private void RemoveStudent()
-        {
-            if (SelectedCourse == null || SelectedStudentInCourse == null) return;
-
-            var entry = _context.StudentCourses
-                                .FirstOrDefault(sc => sc.CourseId == SelectedCourse.Id &&
-                                                      sc.StudentId == SelectedStudentInCourse.Id);
-
-            if (entry != null)
-            {
-                _context.StudentCourses.Remove(entry);
-                _context.SaveChanges();
+                get => _selectedStudentInCourse;
+                set
+                {
+                    if (_selectedStudentInCourse != value)
+                    {
+                        _selectedStudentInCourse = value;
+                        OnPropertyChanged(nameof(SelectedStudentInCourse));
+                    }
+                }
             }
 
-            StudentsInCourse.Remove(SelectedStudentInCourse);
-            AvailableStudents.Add(SelectedStudentInCourse);
-            SelectedStudentInCourse = null;
-        }
+            private Student? _selectedStudentToAdd;
+            public Student? SelectedStudentToAdd
+            {
+                get => _selectedStudentToAdd;
+                set
+                {
+                    if (_selectedStudentToAdd != value)
+                    {
+                        _selectedStudentToAdd = value;
+                        OnPropertyChanged(nameof(SelectedStudentToAdd));
+                    }
+                }
+            }
 
-        // ───────────────────────────────────────────  INotifyPropertyChanged
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string prop = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+            private string _courseName = string.Empty;
+            public string CourseName
+            {
+                get => _courseName;
+                set
+                {
+                    if (_courseName != value)
+                    {
+                        _courseName = value;
+                        OnPropertyChanged(nameof(CourseName));
+                        (AddCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    }
+                }
+            }
+
+
+            private string _courseDescription = string.Empty;
+            public string CourseDescription
+            {
+                get => _courseDescription;
+                set
+                {
+                    if (_courseDescription != value)
+                    {
+                        _courseDescription = value;
+                        OnPropertyChanged(nameof(CourseDescription));
+                    }
+                }
+            }
+
+            // Команды
+            public ICommand AddCourseCommand { get; }
+            public ICommand AddStudentToCourseCommand { get; }
+            public ICommand RemoveStudentFromCourseCommand { get; }
+
+            private void LoadData()
+            {
+                // Все дисциплины
+                AllDisciplines.Clear();
+                foreach (var d in _db.Disciplines.OrderBy(d => d.Name))
+                    AllDisciplines.Add(d);
+
+                // Дисциплины преподавателя
+                MyDisciplines.Clear();
+                foreach (var d in _db.Disciplines.Where(d => d.TeacherId == TeacherId).OrderBy(d => d.Name))
+                    MyDisciplines.Add(d);
+
+                // Курсы преподавателя
+                MyCourses.Clear();
+                foreach (var c in _db.Courses.Where(c => c.TeacherId == TeacherId).OrderBy(c => c.Name))
+                    MyCourses.Add(c);
+            }
+
+            private void UpdateAvailableCourses()
+            {
+                // Здесь можно обновить логику, если нужно фильтровать курсы по выбранной дисциплине
+            }
+
+            private void LoadStudentsInCourse()
+            {
+                StudentsInCourse.Clear();
+
+                if (SelectedCourse == null)
+                    return;
+
+                var students = _db.StudentCourses
+                    .Where(sc => sc.CourseId == SelectedCourse.Id)
+                    .Select(sc => sc.Student)
+                    .OrderBy(s => s.FullName)
+                    .ToList();
+
+                foreach (var student in students)
+                    StudentsInCourse.Add(student);
+            }
+
+            private void UpdateAvailableStudents()
+            {
+                AvailableStudents.Clear();
+
+                if (SelectedCourse == null)
+                    return;
+
+                // Студенты, которые не на выбранном курсе
+                var studentsNotInCourse = _db.Students
+                    .Where(s => !s.StudentCourses.Any(sc => sc.CourseId == SelectedCourse.Id))
+                    .OrderBy(s => s.FullName)
+                    .ToList();
+
+                foreach (var s in studentsNotInCourse)
+                    AvailableStudents.Add(s);
+            }
+
+            private bool CanAddCourse()
+            {
+                return SelectedDiscipline != null && !string.IsNullOrWhiteSpace(CourseName);
+            }
+
+            private void AddCourse()
+            {
+                if (!CanAddCourse())
+                    return;
+
+                var course = new Course
+                {
+                    Name = CourseName.Trim(),
+                    Description = string.IsNullOrWhiteSpace(CourseDescription) ? null : CourseDescription.Trim(),
+                    DisciplineId = SelectedDiscipline!.Id,
+                    TeacherId = TeacherId
+                };
+
+                _db.Courses.Add(course);
+                _db.SaveChanges();
+
+                MyCourses.Add(course);
+
+                // Очистка формы
+                CourseName = string.Empty;
+                CourseDescription = string.Empty;
+                SelectedDiscipline = null;
+            }
+
+            private void AddStudentToCourse()
+            {
+                if (SelectedCourse == null || SelectedStudentToAdd == null)
+                    return;
+
+                var sc = new StudentCourse
+                {
+                    CourseId = SelectedCourse.Id,
+                    StudentId = SelectedStudentToAdd.Id,
+                    EnrolledDate = DateTime.UtcNow
+                };
+
+                _db.StudentCourses.Add(sc);
+                _db.SaveChanges();
+
+                StudentsInCourse.Add(SelectedStudentToAdd);
+                AvailableStudents.Remove(SelectedStudentToAdd);
+
+                SelectedStudentToAdd = null;
+            }
+
+            private void RemoveStudentFromCourse()
+            {
+                if (SelectedCourse == null || SelectedStudentInCourse == null)
+                    return;
+
+                var sc = _db.StudentCourses.FirstOrDefault(x => x.CourseId == SelectedCourse.Id && x.StudentId == SelectedStudentInCourse.Id);
+                if (sc != null)
+                {
+                    _db.StudentCourses.Remove(sc);
+                    _db.SaveChanges();
+
+                    StudentsInCourse.Remove(SelectedStudentInCourse);
+                    AvailableStudents.Add(SelectedStudentInCourse);
+
+                    SelectedStudentInCourse = null;
+                }
+            }
+
+            // INotifyPropertyChanged реализация
+            public event PropertyChangedEventHandler? PropertyChanged;
+            protected void OnPropertyChanged(string propertyName) =>
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
-}

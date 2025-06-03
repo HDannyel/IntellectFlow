@@ -54,7 +54,7 @@ public class LoginViewModel : INotifyPropertyChanged
 
                 // 5. Закрытие окна авторизации
                 Application.Current.Windows
-                    .OfType<LoginView>()
+                    .OfType<LoginView>()    
                     .FirstOrDefault()?
                     .Close();
             }

@@ -1,5 +1,7 @@
 ﻿using IntellectFlow.DataModel;
+using IntellectFlow.Models;
 using IntellectFlow.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +25,12 @@ namespace IntellectFlow.Views
     {
         public TeacherView(IServiceProvider serviceProvider, int teacherId)
         {
-            InitializeComponent();  
-            DataContext = new TeacherViewModel(teacherId);
+            InitializeComponent();
+
+            var context = serviceProvider.GetRequiredService<IntellectFlowDbContext>();
+            DataContext = new TeacherViewModel(context, teacherId);
         }
+
 
 
         private void CoursesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)

@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="509.656" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="900">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -12,63 +12,45 @@
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="280"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левая панель управления -->
-        <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,0,10,0">
-            <!-- Добавление дисциплины --><!--
-            <TextBlock Text="Название дисциплины:" Margin="0,0,0,5"/>
-            <TextBox Text="{Binding DisciplineName}" Margin="0,0,0,10"/>
+        <!-- Левая панель с кнопками и формами -->
+        <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Top">
 
-            <TextBlock Text="Описание (опционально):" Margin="0,0,0,5"/>
-            <TextBox Text="{Binding DisciplineDescription}" Margin="0,0,0,10"/>
-
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <Button Content="Добавить дисциплину"
-                        Command="{Binding AddDisciplineCommand}"
-                        Padding="10,5"
-                        Margin="0,0,10,0"/>
-                <Button Content="Удалить дисциплину"
-                        Command="{Binding DeleteDisciplineCommand}"
-                        Padding="10,5"
-                        IsEnabled="{Binding SelectedDiscipline, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            </StackPanel>-->
-
-            <!-- Выбор дисциплины для курса -->
-            <TextBlock Text="Выберите дисциплину:" Margin="0,0,0,5"/>
-            <ComboBox ItemsSource="{Binding Disciplines}"
+            <!-- Добавление курса -->
+            <TextBlock Text="Добавить курс" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="Выберите дисциплину:"/>
+            <ComboBox ItemsSource="{Binding AllDisciplines}"
                       SelectedItem="{Binding SelectedDiscipline}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>
 
-            <!-- Добавление курса -->
-            <TextBlock Text="Название курса:" Margin="0,0,0,5"/>
+            <TextBlock Text="Название курса:"/>
             <TextBox Text="{Binding CourseName}" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Описание курса (опционально):" Margin="0,0,0,5"/>
-            <TextBox Text="{Binding CourseDescription}" Margin="0,0,0,10"/>
+            <TextBlock Text="Описание курса:"/>
+            <TextBox Text="{Binding CourseDescription}" Margin="0,0,0,15" AcceptsReturn="True" Height="60"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Content="Добавить курс"
-                        Command="{Binding AddCourseCommand}"
-                        Padding="10,5"
-                        Margin="0,0,10,0"/>
-                <Button Content="Удалить курс"
-                        Command="{Binding DeleteCourseCommand}"
-                        Padding="10,5"
-                        IsEnabled="{Binding SelectedCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            </StackPanel>
+            <Button Content="Добавить курс"
+                    Command="{Binding AddCourseCommand}"
+                    Padding="8"
+                    Margin="0,0,0,20"
+                    IsEnabled="{Binding SelectedDiscipline, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <!-- Выбор студента и курс для удаления из курса -->
-            <TextBlock Text="Выберите курс:" Margin="0,10,0,5"/>
+            <Separator Margin="0,0,0,20"/>
+
+            <!-- Управление студентами на курсе -->
+            <TextBlock Text="Управление студентами" FontWeight="Bold" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Выберите курс:"/>
             <ComboBox ItemsSource="{Binding Courses}"
                       SelectedItem="{Binding SelectedCourse}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>
 
-            <TextBlock Text="Выберите студента:" Margin="0,0,0,5"/>
+            <TextBlock Text="Студенты на курсе:"/>
             <ComboBox ItemsSource="{Binding StudentsInCourse}"
                       SelectedItem="{Binding SelectedStudentInCourse}"
                       DisplayMemberPath="FullName"
@@ -76,55 +58,52 @@
 
             <Button Content="Удалить студента из курса"
                     Command="{Binding RemoveStudentFromCourseCommand}"
-                    Padding="10,5"
+                    Padding="8"
+                    Margin="0,0,0,15"
                     IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <TextBlock Text="Добавить студента на курс:" Margin="0,10,0,5"/>
+
+            <TextBlock Text="Добавить студента:"/>
             <ComboBox ItemsSource="{Binding AvailableStudents}"
-          SelectedItem="{Binding SelectedStudentToAdd}"
-          DisplayMemberPath="FullName"
-          Margin="0,0,0,10"/>
+                      SelectedItem="{Binding SelectedStudentToAdd}"
+                      DisplayMemberPath="FullName"
+                      Margin="0,0,0,10"/>
 
             <Button Content="Добавить студента"
-        Command="{Binding AddStudentToCourseCommand}"
-        IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"
-        Padding="10,5"/>
-
+                    Command="{Binding AddStudentToCourseCommand}"
+                    Padding="8"
+                    IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
 
-        <!-- Правая панель с данными -->
-        <Grid Grid.Column="1">
-            <TabControl>
-                <TabItem Header="Мои дисциплины">
-                    <ListBox ItemsSource="{Binding Disciplines}"
-                             SelectedItem="{Binding SelectedDiscipline}"
-                             DisplayMemberPath="Name"
-                             Margin="10"/>
-                </TabItem>
+        <!-- Правая панель с вкладками -->
+        <TabControl Grid.Column="1">
+            <TabItem Header="Все дисциплины">
+                <ListBox ItemsSource="{Binding AllDisciplines}"
+                         SelectedItem="{Binding SelectedDiscipline}"
+                         DisplayMemberPath="Name"
+                         Margin="10"/>
+            </TabItem>
 
-                <TabItem Header="Мои курсы">
-                    <ListBox ItemsSource="{Binding Courses}"
-                             SelectedItem="{Binding SelectedCourse}"
-                             Margin="10"
-                             MouseDoubleClick="CoursesListBox_MouseDoubleClick">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                    <TextBlock Text="{Binding Description}" FontStyle="Italic" FontSize="12" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding Discipline.Name}" FontSize="11" Foreground="Gray"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </TabItem>
+            <TabItem Header="Мои дисциплины">
+                <ListBox ItemsSource="{Binding MyDisciplines}"
+                         SelectedItem="{Binding SelectedDiscipline}"
+                         DisplayMemberPath="Name"
+                         Margin="10"/>
+            </TabItem>
 
-                <TabItem Header="Студенты на курсе">
-                    <ListBox ItemsSource="{Binding StudentsInCourse}"
-                             SelectedItem="{Binding SelectedStudentInCourse}"
-                             DisplayMemberPath="FullName"
-                             Margin="10"/>
-                </TabItem>
-            </TabControl>
-        </Grid>
+            <TabItem Header="Мои курсы">
+                <ListBox ItemsSource="{Binding MyCourses}"
+                         SelectedItem="{Binding SelectedCourse}"
+                         DisplayMemberPath="Name"
+                         Margin="10"/>
+            </TabItem>
+
+            <TabItem Header="Студенты на курсе">
+                <ListBox ItemsSource="{Binding StudentsInCourse}"
+                         SelectedItem="{Binding SelectedStudentInCourse}"
+                         DisplayMemberPath="FullName"
+                         Margin="10"/>
+            </TabItem>
+        </TabControl>
+
     </Grid>
 </UserControl>

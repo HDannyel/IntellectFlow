@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using IntellectFlow.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,9 +21,10 @@ namespace IntellectFlow.Views
         }
         private int GetCurrentTeacherId()
         {
-            // Тут логика получения ID, например, из текущего пользователя или сессии
-            return 123; // Пример жестко заданного ID
+            var userCtx = _serviceProvider.GetRequiredService<IUserContext>();
+            return userCtx.UserId;          // ← сохраняйте при логине
         }
+
 
 
         public void SetContentForRole(string role)
