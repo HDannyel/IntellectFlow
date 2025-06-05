@@ -20,12 +20,17 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
         AddAssignmentCommand = new RelayCommand(_ => AddAssignment(), _ => CanAddAssignment());
         UploadFileCommand = new RelayCommand(_ => UploadFile());
+
+        AddLectureCommand = new RelayCommand(_ => AddLecture(), _ => CanAddLecture());
+        UploadLectureFileCommand = new RelayCommand(_ => UploadLectureFile());
     }
 
     public Course? Course { get; private set; }
     public ObservableCollection<Assignment> Assignments { get; } = new ObservableCollection<Assignment>();
     public ObservableCollection<Student> Students { get; } = new ObservableCollection<Student>();
+    public ObservableCollection<Lecture> Lectures { get; } = new ObservableCollection<Lecture>();
 
+    // --- Для заданий ---
     private string _newAssignmentTitle = "";
     public string NewAssignmentTitle
     {
@@ -78,14 +83,39 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         set { _uploadedFilePath = value; OnPropertyChanged(nameof(UploadedFilePath)); }
     }
 
+    // --- Для лекций ---
+    private string _newLectureTitle = "";
+    public string NewLectureTitle
+    {
+        get => _newLectureTitle;
+        set
+        {
+            if (_newLectureTitle != value)
+            {
+                _newLectureTitle = value;
+                OnPropertyChanged(nameof(NewLectureTitle));
+                RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    private string? _uploadedLectureFilePath;
+    public string? UploadedLectureFilePath
+    {
+        get => _uploadedLectureFilePath;
+        set { _uploadedLectureFilePath = value; OnPropertyChanged(nameof(UploadedLectureFilePath)); }
+    }
+
     // Команды
     public ICommand AddAssignmentCommand { get; }
     public ICommand UploadFileCommand { get; }
 
+    public ICommand AddLectureCommand { get; }
+    public ICommand UploadLectureFileCommand { get; }
+
     private void LoadCourseDetails()
     {
         Course = _db.Courses.FirstOrDefault(c => c.Id == _courseId);
-
         if (Course == null) return;
 
         Assignments.Clear();
@@ -97,14 +127,18 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             .Where(sc => sc.CourseId == _courseId)
             .Select(sc => sc.Student)
             .ToList();
-
         foreach (var s in students)
             Students.Add(s);
+
+        Lectures.Clear();
+        var lectures = _db.Lectures.Where(l => l.CourseId == _courseId).ToList();
+        foreach (var lecture in lectures)
+            Lectures.Add(lecture);
     }
 
+    // Проверка для добавления задания
     private bool CanAddAssignment()
     {
-        // Можно добавить проверку Description и DueDate, если нужно
         return !string.IsNullOrWhiteSpace(NewAssignmentTitle)
                && !string.IsNullOrWhiteSpace(NewAssignmentDescription)
                && NewAssignmentDueDate != default;
@@ -131,9 +165,8 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             {
                 FileName = System.IO.Path.GetFileName(UploadedFilePath),
                 FilePath = UploadedFilePath,
-                ContentType = "application/octet-stream" // или точный mime
+                ContentType = "application/octet-stream"
             };
-
             _db.Documents.Add(doc);
             _db.SaveChanges();
 
@@ -151,15 +184,58 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog();
         if (openFileDialog.ShowDialog() == true)
-        {
             UploadedFilePath = openFileDialog.FileName;
-        }
+    }
+
+    // Проверка для добавления лекции
+    private bool CanAddLecture()
+    {
+        return !string.IsNullOrWhiteSpace(NewLectureTitle)
+               && !string.IsNullOrEmpty(UploadedLectureFilePath);
+    }
+
+    private void AddLecture()
+    {
+        if (Course == null) return;
+
+        var doc = new Document
+        {
+            FileName = System.IO.Path.GetFileName(UploadedLectureFilePath!),
+            FilePath = UploadedLectureFilePath!,
+            ContentType = "application/octet-stream"
+        };
+        _db.Documents.Add(doc);
+        _db.SaveChanges();
+
+        var lecture = new Lecture
+        {
+            Title = NewLectureTitle,
+            DocumentId = doc.Id,
+            CourseId = Course.Id
+        };
+        _db.Lectures.Add(lecture);
+        _db.SaveChanges();
+
+        Lectures.Add(lecture);
+
+        NewLectureTitle = "";
+        UploadedLectureFilePath = null;
+    }
+
+    private void UploadLectureFile()
+    {
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+        if (openFileDialog.ShowDialog() == true)
+            UploadedLectureFilePath = openFileDialog.FileName;
     }
 
     private void RaiseCanExecuteChanged()
     {
-        if (AddAssignmentCommand is RelayCommand relayCommand)
-            relayCommand.RaiseCanExecuteChanged();
+        if (AddAssignmentCommand is RelayCommand relayAssign)
+            relayAssign.RaiseCanExecuteChanged();
+
+        if (AddLectureCommand is RelayCommand relayLecture)
+            relayLecture.RaiseCanExecuteChanged();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
