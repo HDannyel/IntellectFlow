@@ -9,31 +9,36 @@ namespace IntellectFlow.Helpers
 {
     public class FileHelper
     {
-        private const string BasePath = "Files/Teachers";
+        private readonly string _rootFolder;
 
-        public static string SaveTeacherFile(string teacherName, string disciplineName, string courseName, string subFolder, string sourceFilePath)
+        public FileHelper(string rootFolder)
         {
-            // Формируем путь
-            string folderPath = Path.Combine(BasePath, SanitizeFileName(teacherName), SanitizeFileName(disciplineName), SanitizeFileName(courseName), subFolder);
-
-            // Создаём директории, если их нет
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-
-            // Имя файла
-            string fileName = Path.GetFileName(sourceFilePath);
-
-            // Итоговый путь
-            string destFilePath = Path.Combine(folderPath, fileName);
-
-            // Копируем файл (если уже есть — перезаписываем)
-            File.Copy(sourceFilePath, destFilePath, overwrite: true);
-
-            return destFilePath;
+            _rootFolder = rootFolder;
         }
 
-        // Чтобы избежать проблем с недопустимыми символами в папках
-        private static string SanitizeFileName(string name)
+        /// <summary>
+        /// Возвращает полный путь для хранения файла преподавателя,
+        /// создаёт папки, если их нет.
+        /// Путь: /Files/Teachers/{TeacherName}/{DisciplineName}/{CourseName}/{fileType}/
+        /// </summary>
+        public string GetTeacherFilePath(string teacherName, string disciplineName, string courseName, string fileType, string fileName)
+        {
+            // Формируем путь по частям
+            var path = Path.Combine(_rootFolder, "Teachers", SanitizeFileName(teacherName),
+                SanitizeFileName(disciplineName), SanitizeFileName(courseName), SanitizeFileName(fileType));
+
+            // Создаём папки, если нет
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            // Полный путь к файлу
+            return Path.Combine(path, fileName);
+        }
+
+        /// <summary>
+        /// Убирает недопустимые символы из имени папки или файла
+        /// </summary>
+        private string SanitizeFileName(string name)
         {
             foreach (var c in Path.GetInvalidFileNameChars())
             {

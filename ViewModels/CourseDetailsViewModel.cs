@@ -6,6 +6,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using System.Diagnostics;
+using IntellectFlow.Helpers;
+using System.IO;
+using Microsoft.EntityFrameworkCore;
+
 
 public class CourseDetailsViewModel : INotifyPropertyChanged
 {
@@ -16,7 +20,8 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         _db = db;
         _courseId = courseId;
-
+        string rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files");
+        _fileHelper = new FileHelper(rootFolder);
         LoadCourseDetails();
 
         AddAssignmentCommand = new RelayCommand(_ => AddAssignment(), _ => CanAddAssignment());
@@ -29,7 +34,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         DeleteLectureCommand = new RelayCommand(param => DeleteLecture(param as Lecture), param => param is Lecture);
         DeleteAssignmentCommand = new RelayCommand(param => DeleteAssignment(param as Assignment), param => param is Assignment);
     }
-
+    private readonly FileHelper _fileHelper;
     public Course? Course { get; private set; }
     public ObservableCollection<Assignment> Assignments { get; } = new ObservableCollection<Assignment>();
     public ObservableCollection<Student> Students { get; } = new ObservableCollection<Student>();
@@ -124,7 +129,11 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
     private void LoadCourseDetails()
     {
-        Course = _db.Courses.FirstOrDefault(c => c.Id == _courseId);
+        Course = _db.Courses
+     .Include(c => c.Discipline)
+         .ThenInclude(d => d.Teacher)
+     .FirstOrDefault(c => c.Id == _courseId);
+
         if (Course == null) return;
 
         Assignments.Clear();
@@ -143,6 +152,10 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         var lectures = _db.Lectures.Where(l => l.CourseId == _courseId).ToList();
         foreach (var lecture in lectures)
             Lectures.Add(lecture);
+        Debug.WriteLine($"Course: {Course?.Name}");
+        Debug.WriteLine($"Discipline: {Course?.Discipline?.Name}");
+        Debug.WriteLine($"Teacher: {Course?.Discipline?.Teacher?.FullName}");
+
     }
 
     // Проверка для добавления задания
@@ -157,14 +170,35 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         if (Course == null) return;
 
+        // Получаем имена для папок, подставляем значения по умолчанию, если что-то null
+        var teacherName = Course.Teacher.FullName ?? "DefaultTeacher";
+        var disciplineName = Course.Discipline?.Name ?? "DefaultDiscipline";
+        var courseName = Course.Name ?? "DefaultCourse";
+
+        // Формируем путь для сохранения файлов заданий
+        string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files", "Teachers", teacherName, disciplineName, courseName, "Assignments");
+
+        // Создаём папки, если нет
+        if (!Directory.Exists(basePath))
+        {
+            Directory.CreateDirectory(basePath);
+            Debug.WriteLine("Created directory: " + basePath);
+        }
+
         Document? doc = null;
 
         if (!string.IsNullOrEmpty(UploadedFilePath))
         {
+            // Копируем файл в нашу структуру
+            string destFileName = Path.Combine(basePath, Path.GetFileName(UploadedFilePath));
+
+            // Если файл с таким именем уже есть, можно перезаписать или добавить индекс (тут перезапишем)
+            File.Copy(UploadedFilePath, destFileName, overwrite: true);
+
             doc = new Document
             {
-                FileName = System.IO.Path.GetFileName(UploadedFilePath),
-                FilePath = UploadedFilePath,
+                FileName = Path.GetFileName(destFileName),
+                FilePath = destFileName,
                 ContentType = "application/octet-stream"
             };
             _db.Documents.Add(doc);
@@ -190,6 +224,8 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         UploadedFilePath = null;
     }
 
+
+
     private void UploadFile()
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog();
@@ -208,10 +244,28 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         if (Course == null) return;
 
+        var teacherName = Course.Teacher.FullName ?? "DefaultTeacher";
+        var disciplineName = Course.Discipline?.Name ?? "DefaultDiscipline";
+        var courseName = Course.Name ?? "DefaultCourse";
+
+        string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files", "Teachers", teacherName, disciplineName, courseName, "Lectures");
+
+        if (!Directory.Exists(basePath))
+        {
+            Directory.CreateDirectory(basePath);
+            Debug.WriteLine("Created directory: " + basePath);
+        }
+
+        if (string.IsNullOrEmpty(UploadedLectureFilePath))
+            return;
+
+        string destFileName = Path.Combine(basePath, Path.GetFileName(UploadedLectureFilePath));
+        File.Copy(UploadedLectureFilePath, destFileName, overwrite: true);
+
         var doc = new Document
         {
-            FileName = System.IO.Path.GetFileName(UploadedLectureFilePath!),
-            FilePath = UploadedLectureFilePath!,
+            FileName = Path.GetFileName(destFileName),
+            FilePath = destFileName,
             ContentType = "application/octet-stream"
         };
 
@@ -232,6 +286,8 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         NewLectureTitle = "";
         UploadedLectureFilePath = null;
     }
+
+
 
     private void OpenAssignmentFile(Assignment? assignment)
     {

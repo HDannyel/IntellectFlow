@@ -14,8 +14,7 @@ namespace IntellectFlow.DataModel
         public string Name { get; set; } = null!;
         public string MiddleName { get; set; } = null!;
         public string LastName { get; set; } = null!;
-        public string FullName => $"{Name} {MiddleName} {LastName}";
-
+        public string FullName => string.Join(" ", new[] { Name, MiddleName, LastName }.Where(s => !string.IsNullOrEmpty(s)));
         // Внешний ключ на пользователя Identity
         public int UserId { get; set; }
         public User User { get; set; } = null!;
