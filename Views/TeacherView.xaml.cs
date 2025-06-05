@@ -31,6 +31,11 @@ namespace IntellectFlow.Views
             DataContext = new TeacherViewModel(context, teacherId);
         }
 
+        private void MyCourses_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (DataContext is TeacherViewModel vm)
+                vm.OpenCourseDetails();
+        }
 
 
         private void CoursesListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)

@@ -90,11 +90,17 @@
                          Margin="10"/>
             </TabItem>
 
+            <!-- Вкладка Мои курсы -->
             <TabItem Header="Мои курсы">
                 <ListBox ItemsSource="{Binding MyCourses}"
                          SelectedItem="{Binding SelectedCourse}"
-                         DisplayMemberPath="Name"
-                         Margin="10"/>
+                         DisplayMemberPath="Name">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <EventSetter Event="MouseDoubleClick" Handler="MyCourses_DoubleClick"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
             </TabItem>
 
             <TabItem Header="Студенты на курсе">

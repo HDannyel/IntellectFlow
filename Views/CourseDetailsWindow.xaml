@@ -1,0 +1,46 @@
+﻿<Window x:Class="IntellectFlow.Views.CourseDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Детали курса" Height="600" Width="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок курса -->
+        <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0 0 0 10">
+            <TextBlock Text="{Binding Course.Name}" FontWeight="Bold" FontSize="16"/>
+            <TextBlock Text="{Binding Course.Description}" FontStyle="Italic" Margin="0 5 0 0"/>
+        </StackPanel>
+
+        <!-- Вкладки: Задания и Студенты -->
+        <TabControl Grid.Row="1">
+            <TabItem Header="Задания">
+                <StackPanel Margin="5">
+                    <ListBox ItemsSource="{Binding Assignments}" DisplayMemberPath="Title" Height="200" Margin="0 0 0 10"/>
+
+                    <TextBlock Text="Название задания:" Margin="0 5 0 2"/>
+                    <TextBox Text="{Binding NewAssignmentTitle, UpdateSourceTrigger=PropertyChanged}" Height="30"/>
+
+                    <TextBlock Text="Описание задания:" Margin="0 5 0 2"/>
+                    <TextBox Text="{Binding NewAssignmentDescription, UpdateSourceTrigger=PropertyChanged}" 
+                             AcceptsReturn="True" Height="60"/>
+
+                    <TextBlock Text="Срок сдачи:" Margin="0 5 0 2"/>
+                    <DatePicker SelectedDate="{Binding NewAssignmentDueDate}"/>
+
+                    <Button Content="Загрузить файл" Command="{Binding UploadFileCommand}" Margin="0 10 0 0"/>
+                    <TextBlock Text="{Binding UploadedFilePath}" FontSize="10" Foreground="Gray" Margin="0 3 0 0"/>
+
+                    <Button Content="Добавить задание" Command="{Binding AddAssignmentCommand}" Margin="0 10 0 0"/>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Студенты">
+                <ListBox ItemsSource="{Binding Students}" DisplayMemberPath="LastName"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

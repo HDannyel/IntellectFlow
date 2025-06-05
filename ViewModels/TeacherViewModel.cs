@@ -1,5 +1,7 @@
 ﻿using IntellectFlow.DataModel;
 using IntellectFlow.Models;
+using IntellectFlow.Views;
+using IntellectFlow.ViewModels;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -246,6 +248,18 @@ namespace IntellectFlow.ViewModels
             CourseName = string.Empty;
             CourseDescription = string.Empty;
             SelectedDiscipline = null;
+        }
+        // В TeacherViewModel добавим обработчик двойного клика:
+        public void OpenCourseDetails()
+        {
+            if (SelectedCourse == null) return;
+
+            var courseDetailsVM = new CourseDetailsViewModel(_db, SelectedCourse.Id);
+            var courseDetailsWindow = new CourseDetailsWindow
+            {
+                DataContext = courseDetailsVM
+            };
+            courseDetailsWindow.ShowDialog();
         }
 
         private void AddStudentToCourse()
