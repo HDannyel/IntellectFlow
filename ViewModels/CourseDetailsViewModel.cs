@@ -1,7 +1,9 @@
 ﻿using IntellectFlow.DataModel;
 using IntellectFlow.Models;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
 
 public class CourseDetailsViewModel : INotifyPropertyChanged
@@ -28,21 +30,45 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     public string NewAssignmentTitle
     {
         get => _newAssignmentTitle;
-        set { _newAssignmentTitle = value; OnPropertyChanged(nameof(NewAssignmentTitle)); }
+        set
+        {
+            if (_newAssignmentTitle != value)
+            {
+                _newAssignmentTitle = value;
+                OnPropertyChanged(nameof(NewAssignmentTitle));
+                RaiseCanExecuteChanged();
+            }
+        }
     }
 
     private string _newAssignmentDescription = "";
     public string NewAssignmentDescription
     {
         get => _newAssignmentDescription;
-        set { _newAssignmentDescription = value; OnPropertyChanged(nameof(NewAssignmentDescription)); }
+        set
+        {
+            if (_newAssignmentDescription != value)
+            {
+                _newAssignmentDescription = value;
+                OnPropertyChanged(nameof(NewAssignmentDescription));
+                RaiseCanExecuteChanged();
+            }
+        }
     }
 
     private DateTime _newAssignmentDueDate = DateTime.Now.AddDays(7);
     public DateTime NewAssignmentDueDate
     {
         get => _newAssignmentDueDate;
-        set { _newAssignmentDueDate = value; OnPropertyChanged(nameof(NewAssignmentDueDate)); }
+        set
+        {
+            if (_newAssignmentDueDate != value)
+            {
+                _newAssignmentDueDate = value;
+                OnPropertyChanged(nameof(NewAssignmentDueDate));
+                RaiseCanExecuteChanged();
+            }
+        }
     }
 
     private string? _uploadedFilePath;
@@ -58,9 +84,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
     private void LoadCourseDetails()
     {
-        Course = _db.Courses
-            .Where(c => c.Id == _courseId)
-            .FirstOrDefault();
+        Course = _db.Courses.FirstOrDefault(c => c.Id == _courseId);
 
         if (Course == null) return;
 
@@ -80,7 +104,10 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
     private bool CanAddAssignment()
     {
-        return !string.IsNullOrWhiteSpace(NewAssignmentTitle);
+        // Можно добавить проверку Description и DueDate, если нужно
+        return !string.IsNullOrWhiteSpace(NewAssignmentTitle)
+               && !string.IsNullOrWhiteSpace(NewAssignmentDescription)
+               && NewAssignmentDueDate != default;
     }
 
     private void AddAssignment()
@@ -98,27 +125,23 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         _db.Assignments.Add(assignment);
         _db.SaveChanges();
 
-        // Если файл загружен — создаем документ и связываем с заданием
         if (!string.IsNullOrEmpty(UploadedFilePath))
         {
             var doc = new Document
             {
                 FileName = System.IO.Path.GetFileName(UploadedFilePath),
                 FilePath = UploadedFilePath,
-                ContentType = "application/octet-stream" // или более точный mime
+                ContentType = "application/octet-stream" // или точный mime
             };
 
             _db.Documents.Add(doc);
             _db.SaveChanges();
 
-            // TODO: Добавить связь Document <-> Assignment, если есть такая связь
-            // Можно добавить ICollection<Document> в Assignment, если надо.
+            // TODO: связать Document с Assignment, если нужно
         }
 
-        // Обновляем список
         Assignments.Add(assignment);
 
-        // Очистка формы
         NewAssignmentTitle = "";
         NewAssignmentDescription = "";
         UploadedFilePath = null;
@@ -131,6 +154,12 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         {
             UploadedFilePath = openFileDialog.FileName;
         }
+    }
+
+    private void RaiseCanExecuteChanged()
+    {
+        if (AddAssignmentCommand is RelayCommand relayCommand)
+            relayCommand.RaiseCanExecuteChanged();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
