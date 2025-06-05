@@ -15,13 +15,30 @@
             <TextBlock Text="{Binding Course.Description}" FontStyle="Italic" Margin="0 5 0 0"/>
         </StackPanel>
 
-        <!-- Вкладки: Задания, Студенты, Лекции -->
+        <!-- Вкладки: Лекции, Задания, Студенты -->
         <TabControl Grid.Row="1">
+
+            <!-- Лекции -->
             <TabItem Header="Лекции">
                 <StackPanel Margin="5">
-                    <ListBox ItemsSource="{Binding Lectures}" DisplayMemberPath="Title" Height="200" Margin="0 0 0 10"/>
+                    <ItemsControl ItemsSource="{Binding Lectures}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 5" >
+                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Width="200"/>
+                                    <Button Content="Скачать файл"
+                                            Command="{Binding DataContext.OpenLectureFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" Margin="5 0"/>
+                                    <Button Content="Удалить"
+                                            Command="{Binding DataContext.DeleteLectureCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" Margin="5 0" Background="LightCoral"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                    <TextBlock Text="Название лекции:" Margin="0 5 0 2"/>
+                    <!-- Форма добавления лекции -->
+                    <TextBlock Text="Название лекции:" Margin="10 10 0 2"/>
                     <TextBox Text="{Binding NewLectureTitle, UpdateSourceTrigger=PropertyChanged}" Height="30"/>
 
                     <Button Content="Загрузить файл лекции" Command="{Binding UploadLectureFileCommand}" Margin="0 10 0 0"/>
@@ -30,11 +47,28 @@
                     <Button Content="Добавить лекцию" Command="{Binding AddLectureCommand}" Margin="0 10 0 0"/>
                 </StackPanel>
             </TabItem>
+
+            <!-- Задания -->
             <TabItem Header="Задания">
                 <StackPanel Margin="5">
-                    <ListBox ItemsSource="{Binding Assignments}" DisplayMemberPath="Title" Height="200" Margin="0 0 0 10"/>
+                    <ItemsControl ItemsSource="{Binding Assignments}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0 0 0 5" >
+                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Width="200"/>
+                                    <Button Content="Скачать файл"
+                                            Command="{Binding DataContext.OpenAssignmentFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" Margin="5 0"/>
+                                    <Button Content="Удалить"
+                                            Command="{Binding DataContext.DeleteAssignmentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" Margin="5 0" Background="LightCoral"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                    <TextBlock Text="Название задания:" Margin="0 5 0 2"/>
+                    <!-- Форма добавления задания -->
+                    <TextBlock Text="Название задания:" Margin="10 10 0 2"/>
                     <TextBox Text="{Binding NewAssignmentTitle, UpdateSourceTrigger=PropertyChanged}" Height="30"/>
 
                     <TextBlock Text="Описание задания:" Margin="0 5 0 2"/>
@@ -51,11 +85,10 @@
                 </StackPanel>
             </TabItem>
 
+            <!-- Студенты -->
             <TabItem Header="Студенты">
                 <ListBox ItemsSource="{Binding Students}" DisplayMemberPath="LastName"/>
             </TabItem>
-
-           
         </TabControl>
     </Grid>
 </Window>

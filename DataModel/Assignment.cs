@@ -16,5 +16,9 @@ namespace IntellectFlow.DataModel
         public int CourseId { get; set; }
         public Course Course { get; set; } = null!;
         public ICollection<StudentTaskSubmission> Submissions { get; set; } = new List<StudentTaskSubmission>();
+
+        // Связь с Document (добавь, если нужно)
+        public int? DocumentId { get; set; }
+        public Document? Document { get; set; }
     }
 }

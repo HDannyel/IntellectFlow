@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
+using System.Diagnostics;
 
 public class CourseDetailsViewModel : INotifyPropertyChanged
 {
@@ -20,9 +21,13 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
         AddAssignmentCommand = new RelayCommand(_ => AddAssignment(), _ => CanAddAssignment());
         UploadFileCommand = new RelayCommand(_ => UploadFile());
-
+        OpenAssignmentFileCommand = new RelayCommand(param => OpenAssignmentFile(param as Assignment), param => param is Assignment);
+        OpenLectureFileCommand = new RelayCommand(param => OpenLectureFile(param as Lecture), param => param is Lecture);
         AddLectureCommand = new RelayCommand(_ => AddLecture(), _ => CanAddLecture());
         UploadLectureFileCommand = new RelayCommand(_ => UploadLectureFile());
+
+        DeleteLectureCommand = new RelayCommand(param => DeleteLecture(param as Lecture), param => param is Lecture);
+        DeleteAssignmentCommand = new RelayCommand(param => DeleteAssignment(param as Assignment), param => param is Assignment);
     }
 
     public Course? Course { get; private set; }
@@ -109,9 +114,13 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     // Команды
     public ICommand AddAssignmentCommand { get; }
     public ICommand UploadFileCommand { get; }
-
+    public ICommand OpenAssignmentFileCommand { get; }
+    public ICommand OpenLectureFileCommand { get; }
     public ICommand AddLectureCommand { get; }
     public ICommand UploadLectureFileCommand { get; }
+
+    public ICommand DeleteLectureCommand { get; }
+    public ICommand DeleteAssignmentCommand { get; }
 
     private void LoadCourseDetails()
     {
@@ -148,20 +157,11 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         if (Course == null) return;
 
-        var assignment = new Assignment
-        {
-            Title = NewAssignmentTitle,
-            Description = NewAssignmentDescription,
-            DueDate = NewAssignmentDueDate,
-            CourseId = Course.Id
-        };
-
-        _db.Assignments.Add(assignment);
-        _db.SaveChanges();
+        Document? doc = null;
 
         if (!string.IsNullOrEmpty(UploadedFilePath))
         {
-            var doc = new Document
+            doc = new Document
             {
                 FileName = System.IO.Path.GetFileName(UploadedFilePath),
                 FilePath = UploadedFilePath,
@@ -169,9 +169,19 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             };
             _db.Documents.Add(doc);
             _db.SaveChanges();
-
-            // TODO: связать Document с Assignment, если нужно
         }
+
+        var assignment = new Assignment
+        {
+            Title = NewAssignmentTitle,
+            Description = NewAssignmentDescription,
+            DueDate = NewAssignmentDueDate,
+            CourseId = Course.Id,
+            DocumentId = doc?.Id  // Связываем с документом, если он есть
+        };
+
+        _db.Assignments.Add(assignment);
+        _db.SaveChanges();
 
         Assignments.Add(assignment);
 
@@ -204,6 +214,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             FilePath = UploadedLectureFilePath!,
             ContentType = "application/octet-stream"
         };
+
         _db.Documents.Add(doc);
         _db.SaveChanges();
 
@@ -222,11 +233,85 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         UploadedLectureFilePath = null;
     }
 
+    private void OpenAssignmentFile(Assignment? assignment)
+    {
+        if (assignment == null) return;
+
+        var doc = _db.Documents.FirstOrDefault(d => d.Id == assignment.DocumentId);
+        if (doc == null || string.IsNullOrEmpty(doc.FilePath)) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(doc.FilePath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Не удалось открыть файл: {ex.Message}");
+        }
+    }
+
+    private void OpenLectureFile(Lecture? lecture)
+    {
+        if (lecture == null) return;
+
+        var doc = _db.Documents.FirstOrDefault(d => d.Id == lecture.DocumentId);
+        if (doc == null || string.IsNullOrEmpty(doc.FilePath)) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(doc.FilePath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Не удалось открыть файл: {ex.Message}");
+        }
+    }
+
     private void UploadLectureFile()
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog();
         if (openFileDialog.ShowDialog() == true)
             UploadedLectureFilePath = openFileDialog.FileName;
+    }
+
+    private void DeleteLecture(Lecture? lecture)
+    {
+        if (lecture == null) return;
+
+        var lectureInDb = _db.Lectures.Find(lecture.Id);
+        if (lectureInDb != null)
+        {
+            var doc = _db.Documents.Find(lectureInDb.DocumentId);
+            if (doc != null)
+            {
+                _db.Documents.Remove(doc);
+            }
+
+            _db.Lectures.Remove(lectureInDb);
+            _db.SaveChanges();
+
+            Lectures.Remove(lecture);
+        }
+    }
+
+    private void DeleteAssignment(Assignment? assignment)
+    {
+        if (assignment == null) return;
+
+        var assignmentInDb = _db.Assignments.Find(assignment.Id);
+        if (assignmentInDb != null)
+        {
+            var doc = _db.Documents.Find(assignmentInDb.DocumentId);
+            if (doc != null)
+            {
+                _db.Documents.Remove(doc);
+            }
+
+            _db.Assignments.Remove(assignmentInDb);
+            _db.SaveChanges();
+
+            Assignments.Remove(assignment);
+        }
     }
 
     private void RaiseCanExecuteChanged()
