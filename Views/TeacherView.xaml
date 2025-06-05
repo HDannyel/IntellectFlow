@@ -16,7 +16,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левая панель с кнопками и формами -->
+        <!-- Левая панель -->
         <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Top">
 
             <!-- Добавление курса -->
@@ -41,11 +41,11 @@
 
             <Separator Margin="0,0,0,20"/>
 
-            <!-- Управление студентами на курсе -->
+            <!-- Управление студентами -->
             <TextBlock Text="Управление студентами" FontWeight="Bold" Margin="0,0,0,10"/>
 
             <TextBlock Text="Выберите курс:"/>
-            <ComboBox ItemsSource="{Binding Courses}"
+            <ComboBox ItemsSource="{Binding MyCourses}"
                       SelectedItem="{Binding SelectedCourse}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>

@@ -19,13 +19,11 @@ namespace IntellectFlow.Views
         {
             _serviceProvider = serviceProvider;
         }
-        private int GetCurrentTeacherId()
+        private int? GetCurrentTeacherId()
         {
             var userCtx = _serviceProvider.GetRequiredService<IUserContext>();
-            return userCtx.UserId;          // ← сохраняйте при логине
+            return userCtx.TeacherId;
         }
-
-
 
         public void SetContentForRole(string role)
         {
@@ -36,8 +34,10 @@ namespace IntellectFlow.Views
 
             if (role == "Teacher")
             {
-                int teacherId = GetCurrentTeacherId(); // Получи текущий ID учителя (свой метод)
-                ContentControlArea.Content = new TeacherView(_serviceProvider, teacherId);
+                int? teacherId = GetCurrentTeacherId();
+                if (teacherId == null)
+                    throw new InvalidOperationException("TeacherId не установлен для учителя");
+                ContentControlArea.Content = new TeacherView(_serviceProvider, teacherId.Value);
             }
             else if (role == "Admin")
             {
@@ -48,6 +48,7 @@ namespace IntellectFlow.Views
                 ContentControlArea.Content = _serviceProvider.GetRequiredService<StudentView>();
             }
         }
+
 
     }
 }

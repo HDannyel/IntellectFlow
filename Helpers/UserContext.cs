@@ -9,9 +9,9 @@ namespace IntellectFlow.Helpers
     public class UserContext : IUserContext
     {
         public int UserId { get; private set; }
-        public string UserName { get; private set; } = string.Empty;
-        public string UserRole { get; private set; } = string.Empty;
-        public int? TeacherId { get; private set; }  // <-- добавили TeacherId
+        public string UserName { get; private set; }
+        public string UserRole { get; private set; }
+        public int? TeacherId { get; private set; }
 
         public void SetUser(int userId, string userName, string userRole, int? teacherId = null)
         {
@@ -21,5 +21,6 @@ namespace IntellectFlow.Helpers
             TeacherId = teacherId;
         }
     }
+
 
 }

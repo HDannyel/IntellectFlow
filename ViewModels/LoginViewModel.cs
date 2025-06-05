@@ -1,19 +1,24 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using IntellectFlow.Helpers;
 using IntellectFlow.Views;
+using IntellectFlow.DataModel;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using IntellectFlow.Models;
 
 public class LoginViewModel : INotifyPropertyChanged
 {
     private readonly AuthService _authService;
     private readonly INavigationService _navigationService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IntellectFlowDbContext _dbContext;
+    private readonly IUserContext _userContext;
 
     public ICommand LoginCommand { get; }
     public string Email { get; set; }
@@ -21,11 +26,15 @@ public class LoginViewModel : INotifyPropertyChanged
     public LoginViewModel(
         AuthService authService,
         INavigationService navigationService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IntellectFlowDbContext dbContext,
+        IUserContext userContext)
     {
         _authService = authService;
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
+        _dbContext = dbContext;
+        _userContext = userContext;
 
         LoginCommand = new RelayCommand<string>(ExecuteLogin);
     }
@@ -37,24 +46,45 @@ public class LoginViewModel : INotifyPropertyChanged
             var roles = await _authService.Login(Email, password);
             if (roles != null)
             {
-                var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == Email);
+                if (user == null)
+                {
+                    MessageBox.Show("Пользователь не найден");
+                    return;
+                }
 
-                // 1. Инициализация ServiceProvider
-                mainWindow.Initialize(_serviceProvider);
+                Teacher? teacher = null;
+                if (roles.Contains("Teacher"))
+                {
+                    teacher = await _dbContext.Teachers.FirstOrDefaultAsync(t => t.UserId == user.Id);
+                    if (teacher == null)
+                    {
+                        teacher = new Teacher
+                        {
+                            UserId = user.Id,
+                            Name = user.Name,
+                            MiddleName = user.MiddleName ?? string.Empty,
+                            LastName = user.LastName
+                        };
+                        _dbContext.Teachers.Add(teacher);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                }
 
-                // 2. Определение основной роли
                 var primaryRole = roles.Contains("Admin") ? "Admin" :
                                   roles.Contains("Teacher") ? "Teacher" : "Student";
 
-                // 3. Установка контента по роли
-                mainWindow.SetContentForRole(primaryRole);
+                // Передаём teacher?.Id в UserContext
+                _userContext.SetUser(user.Id, user.UserName, primaryRole, teacher?.Id);
 
-                // 4. Показ главного окна до закрытия LoginView
+                var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+
+                mainWindow.Initialize(_serviceProvider);
+                mainWindow.SetContentForRole(primaryRole);
                 mainWindow.Show();
 
-                // 5. Закрытие окна авторизации
                 Application.Current.Windows
-                    .OfType<LoginView>()    
+                    .OfType<LoginView>()
                     .FirstOrDefault()?
                     .Close();
             }
@@ -69,10 +99,7 @@ public class LoginViewModel : INotifyPropertyChanged
         }
     }
 
-
-    public event PropertyChangedEventHandler PropertyChanged;
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-    {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
 }

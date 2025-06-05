@@ -3,6 +3,8 @@ using IntellectFlow.Helpers;
 using IntellectFlow.Views;
 using Microsoft.AspNetCore.Identity;
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using IntellectFlow.Models;
 
 public class AuthService
 {
@@ -10,46 +12,53 @@ public class AuthService
     private readonly UserManager<User> _userManager;
     private readonly INavigationService _navigationService;
     private readonly IUserContext _userContext;
+    private readonly IntellectFlowDbContext _dbContext;
 
     public AuthService(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
         INavigationService navigationService,
-        IUserContext userContext)  // добавляем
+        IUserContext userContext,
+        IntellectFlowDbContext dbContext) // <-- добавили
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _navigationService = navigationService;
-        _userContext = userContext; // сохраняем
+        _userContext = userContext;
+        _dbContext = dbContext; // <-- сохранили
     }
+
 
     public async Task<IList<string>> Login(string email, string password)
     {
-        Debug.WriteLine($"Попытка входа: email='{email}', пароль='{password}'");
-
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
-        {
-            Debug.WriteLine($"Пользователь с email '{email}' не найден");
             return null;
-        }
-
-        Debug.WriteLine($"Пользователь найден: {user.UserName}");
 
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, password);
-        Debug.WriteLine($"Пароль корректен: {isPasswordValid}");
-
         if (!isPasswordValid)
             return null;
 
         var roles = await _userManager.GetRolesAsync(user);
-        Debug.WriteLine($"Роли пользователя: {string.Join(", ", roles)}");
 
-        // Записываем в UserContext
-        _userContext.SetUser(user.Id, user.UserName, roles.FirstOrDefault() ?? string.Empty);
+        int? teacherId = null;
+
+        if (roles.Contains("Teacher"))
+        {
+            // Ищем запись в таблице Teachers по UserId
+            teacherId = await _dbContext.Teachers
+                 .Where(t => t.UserId == user.Id)
+                 .Select(t => (int?)t.Id)
+                 .FirstOrDefaultAsync(); 
+
+        }
+
+        _userContext.SetUser(user.Id, user.UserName, roles.FirstOrDefault() ?? string.Empty, teacherId);
 
         return roles;
     }
+
+
 
 
 
@@ -70,5 +79,4 @@ public class AuthService
                 break;
         }
     }
-
 }
