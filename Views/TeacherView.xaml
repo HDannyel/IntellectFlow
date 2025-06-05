@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="1000">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -26,7 +26,10 @@
                       SelectedItem="{Binding SelectedDiscipline}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>
-
+            <ComboBox ItemsSource="{Binding MyCourses}"
+            SelectedItem="{Binding SelectedCourse}"
+            DisplayMemberPath="Name"
+            Margin="0,0,0,10"/>
             <TextBlock Text="Название курса:"/>
             <TextBox Text="{Binding CourseName}" Margin="0,0,0,10"/>
 
@@ -38,7 +41,11 @@
                     Padding="8"
                     Margin="0,0,0,20"
                     IsEnabled="{Binding SelectedDiscipline, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
+            <Button Content="Удалить курс"
+                    Command="{Binding RemoveCourseCommand}"
+                    Padding="8"
+                    Margin="0,0,0,20"
+                    IsEnabled="{Binding SelectedCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <Separator Margin="0,0,0,20"/>
 
             <!-- Управление студентами -->

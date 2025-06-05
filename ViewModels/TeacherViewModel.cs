@@ -24,6 +24,9 @@ namespace IntellectFlow.ViewModels
             AddCourseCommand = new RelayCommand(_ => AddCourse(), _ => CanAddCourse());
             AddStudentToCourseCommand = new RelayCommand(_ => AddStudentToCourse(), _ => SelectedStudentToAdd != null && SelectedCourse != null);
             RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudentFromCourse(), _ => SelectedStudentInCourse != null && SelectedCourse != null);
+            RemoveCourseCommand = new RelayCommand(_ => RemoveCourse(), _ => SelectedCourse != null);
+
+
         }
 
         public int TeacherId { get; }
@@ -67,6 +70,8 @@ namespace IntellectFlow.ViewModels
                     UpdateAvailableStudents(); // обновляем доступных студентов при смене курса
                     (AddStudentToCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
                     (RemoveStudentFromCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (RemoveCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+
                 }
             }
         }
@@ -134,6 +139,7 @@ namespace IntellectFlow.ViewModels
         public ICommand AddCourseCommand { get; }
         public ICommand AddStudentToCourseCommand { get; }
         public ICommand RemoveStudentFromCourseCommand { get; }
+        public ICommand RemoveCourseCommand { get; }
 
         private void LoadData()
         {
@@ -303,6 +309,29 @@ namespace IntellectFlow.ViewModels
 
                 SelectedStudentInCourse = null;
             }
+        }
+        private void RemoveCourse()
+        {
+            if (SelectedCourse == null)
+                return;
+
+            // Удаляем связанные записи, если есть (например, StudentCourses)
+            var studentCourses = _db.StudentCourses.Where(sc => sc.CourseId == SelectedCourse.Id).ToList();
+            if (studentCourses.Any())
+            {
+                _db.StudentCourses.RemoveRange(studentCourses);
+            }
+
+            _db.Courses.Remove(SelectedCourse);
+            _db.SaveChanges();
+
+            MyCourses.Remove(SelectedCourse);
+
+            // Обновляем "Мои дисциплины" (если в результате удаления курса дисциплина стала неактивна)
+            UpdateMyDisciplines();
+
+            // Очистим выбор
+            SelectedCourse = null;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
