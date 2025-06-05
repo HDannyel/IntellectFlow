@@ -10,11 +10,11 @@ using IntellectFlow.Helpers;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 
-
 public class CourseDetailsViewModel : INotifyPropertyChanged
 {
     private readonly IntellectFlowDbContext _db;
     private readonly int _courseId;
+    private readonly FileHelper _fileHelper;
 
     public CourseDetailsViewModel(IntellectFlowDbContext db, int courseId)
     {
@@ -24,23 +24,63 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         _fileHelper = new FileHelper(rootFolder);
         LoadCourseDetails();
 
+        // Команды для заданий и лекций
         AddAssignmentCommand = new RelayCommand(_ => AddAssignment(), _ => CanAddAssignment());
         UploadFileCommand = new RelayCommand(_ => UploadFile());
         OpenAssignmentFileCommand = new RelayCommand(param => OpenAssignmentFile(param as Assignment), param => param is Assignment);
         OpenLectureFileCommand = new RelayCommand(param => OpenLectureFile(param as Lecture), param => param is Lecture);
         AddLectureCommand = new RelayCommand(_ => AddLecture(), _ => CanAddLecture());
         UploadLectureFileCommand = new RelayCommand(_ => UploadLectureFile());
-
         DeleteLectureCommand = new RelayCommand(param => DeleteLecture(param as Lecture), param => param is Lecture);
         DeleteAssignmentCommand = new RelayCommand(param => DeleteAssignment(param as Assignment), param => param is Assignment);
+
+        // Команды для работы со студентами
+        AddStudentToCourseCommand = new RelayCommand(_ => AddStudentToCourse(),
+            _ => SelectedStudentToAdd != null && Course != null);
+        RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudentFromCourse(),
+            _ => SelectedStudentInCourse != null && Course != null);
     }
-    private readonly FileHelper _fileHelper;
+
+    // Основные свойства
     public Course? Course { get; private set; }
     public ObservableCollection<Assignment> Assignments { get; } = new ObservableCollection<Assignment>();
-    public ObservableCollection<Student> Students { get; } = new ObservableCollection<Student>();
     public ObservableCollection<Lecture> Lectures { get; } = new ObservableCollection<Lecture>();
 
-    // --- Для заданий ---
+    // Свойства для работы со студентами
+    public ObservableCollection<Student> StudentsInCourse { get; } = new ObservableCollection<Student>();
+    public ObservableCollection<Student> AvailableStudents { get; } = new ObservableCollection<Student>();
+
+    private Student? _selectedStudentInCourse;
+    public Student? SelectedStudentInCourse
+    {
+        get => _selectedStudentInCourse;
+        set
+        {
+            if (_selectedStudentInCourse != value)
+            {
+                _selectedStudentInCourse = value;
+                OnPropertyChanged(nameof(SelectedStudentInCourse));
+                (RemoveStudentFromCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    private Student? _selectedStudentToAdd;
+    public Student? SelectedStudentToAdd
+    {
+        get => _selectedStudentToAdd;
+        set
+        {
+            if (_selectedStudentToAdd != value)
+            {
+                _selectedStudentToAdd = value;
+                OnPropertyChanged(nameof(SelectedStudentToAdd));
+                (AddStudentToCourseCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    // Свойства для заданий
     private string _newAssignmentTitle = "";
     public string NewAssignmentTitle
     {
@@ -93,7 +133,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         set { _uploadedFilePath = value; OnPropertyChanged(nameof(UploadedFilePath)); }
     }
 
-    // --- Для лекций ---
+    // Свойства для лекций
     private string _newLectureTitle = "";
     public string NewLectureTitle
     {
@@ -123,42 +163,119 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     public ICommand OpenLectureFileCommand { get; }
     public ICommand AddLectureCommand { get; }
     public ICommand UploadLectureFileCommand { get; }
-
     public ICommand DeleteLectureCommand { get; }
     public ICommand DeleteAssignmentCommand { get; }
+    public ICommand AddStudentToCourseCommand { get; }
+    public ICommand RemoveStudentFromCourseCommand { get; }
 
     private void LoadCourseDetails()
     {
         Course = _db.Courses
-     .Include(c => c.Discipline)
-         .ThenInclude(d => d.Teacher)
-     .FirstOrDefault(c => c.Id == _courseId);
+            .Include(c => c.Discipline)
+                .ThenInclude(d => d.Teacher)
+            .FirstOrDefault(c => c.Id == _courseId);
 
         if (Course == null) return;
 
+        // Загрузка заданий
         Assignments.Clear();
         foreach (var a in _db.Assignments.Where(a => a.CourseId == _courseId))
             Assignments.Add(a);
 
-        Students.Clear();
-        var students = _db.StudentCourses
-            .Where(sc => sc.CourseId == _courseId)
-            .Select(sc => sc.Student)
-            .ToList();
-        foreach (var s in students)
-            Students.Add(s);
-
+        // Загрузка лекций
         Lectures.Clear();
-        var lectures = _db.Lectures.Where(l => l.CourseId == _courseId).ToList();
-        foreach (var lecture in lectures)
-            Lectures.Add(lecture);
-        Debug.WriteLine($"Course: {Course?.Name}");
-        Debug.WriteLine($"Discipline: {Course?.Discipline?.Name}");
-        Debug.WriteLine($"Teacher: {Course?.Discipline?.Teacher?.FullName}");
+        foreach (var l in _db.Lectures.Where(l => l.CourseId == _courseId))
+            Lectures.Add(l);
 
+        // Загрузка студентов
+        LoadStudentsInCourse();
+        UpdateAvailableStudents();
     }
 
-    // Проверка для добавления задания
+    #region Методы для работы со студентами
+
+    private void LoadStudentsInCourse()
+    {
+        StudentsInCourse.Clear();
+        if (Course == null) return;
+
+        var students = _db.StudentCourses
+            .Where(sc => sc.CourseId == Course.Id)
+            .Select(sc => sc.Student)
+            .OrderBy(s => s.LastName)
+            .ThenBy(s => s.Name)
+            .ToList();
+
+        foreach (var student in students)
+            StudentsInCourse.Add(student);
+    }
+
+    private void UpdateAvailableStudents()
+    {
+        AvailableStudents.Clear();
+        if (Course == null) return;
+
+        var studentsNotInCourse = _db.Students
+            .Where(s => !s.StudentCourses.Any(sc => sc.CourseId == Course.Id))
+            .OrderBy(s => s.LastName)
+            .ThenBy(s => s.Name)
+            .ToList();
+
+        foreach (var student in studentsNotInCourse)
+            AvailableStudents.Add(student);
+    }
+
+    private void AddStudentToCourse()
+    {
+        if (Course == null || SelectedStudentToAdd == null) return;
+
+        // Проверяем, не добавлен ли уже студент
+        var exists = _db.StudentCourses
+            .Any(sc => sc.CourseId == Course.Id && sc.StudentId == SelectedStudentToAdd.Id);
+
+        if (exists) return;
+
+        var studentCourse = new StudentCourse
+        {
+            CourseId = Course.Id,
+            StudentId = SelectedStudentToAdd.Id,
+            EnrolledDate = DateTime.UtcNow
+        };
+
+        _db.StudentCourses.Add(studentCourse);
+        _db.SaveChanges();
+
+        // Обновляем списки
+        LoadStudentsInCourse();
+        UpdateAvailableStudents();
+
+        SelectedStudentToAdd = null;
+    }
+
+    private void RemoveStudentFromCourse()
+    {
+        if (Course == null || SelectedStudentInCourse == null) return;
+
+        var studentCourse = _db.StudentCourses
+            .FirstOrDefault(sc => sc.CourseId == Course.Id && sc.StudentId == SelectedStudentInCourse.Id);
+
+        if (studentCourse != null)
+        {
+            _db.StudentCourses.Remove(studentCourse);
+            _db.SaveChanges();
+
+            // Обновляем списки
+            LoadStudentsInCourse();
+            UpdateAvailableStudents();
+
+            SelectedStudentInCourse = null;
+        }
+    }
+
+    #endregion
+
+    #region Методы для заданий
+
     private bool CanAddAssignment()
     {
         return !string.IsNullOrWhiteSpace(NewAssignmentTitle)
@@ -170,15 +287,12 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     {
         if (Course == null) return;
 
-        // Получаем имена для папок, подставляем значения по умолчанию, если что-то null
         var teacherName = Course.Teacher.FullName ?? "DefaultTeacher";
         var disciplineName = Course.Discipline?.Name ?? "DefaultDiscipline";
         var courseName = Course.Name ?? "DefaultCourse";
 
-        // Формируем путь для сохранения файлов заданий
         string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files", "Teachers", teacherName, disciplineName, courseName, "Assignments");
 
-        // Создаём папки, если нет
         if (!Directory.Exists(basePath))
         {
             Directory.CreateDirectory(basePath);
@@ -189,10 +303,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
 
         if (!string.IsNullOrEmpty(UploadedFilePath))
         {
-            // Копируем файл в нашу структуру
             string destFileName = Path.Combine(basePath, Path.GetFileName(UploadedFilePath));
-
-            // Если файл с таким именем уже есть, можно перезаписать или добавить индекс (тут перезапишем)
             File.Copy(UploadedFilePath, destFileName, overwrite: true);
 
             doc = new Document
@@ -211,7 +322,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             Description = NewAssignmentDescription,
             DueDate = NewAssignmentDueDate,
             CourseId = Course.Id,
-            DocumentId = doc?.Id  // Связываем с документом, если он есть
+            DocumentId = doc?.Id
         };
 
         _db.Assignments.Add(assignment);
@@ -224,8 +335,6 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         UploadedFilePath = null;
     }
 
-
-
     private void UploadFile()
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog();
@@ -233,7 +342,47 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             UploadedFilePath = openFileDialog.FileName;
     }
 
-    // Проверка для добавления лекции
+    private void OpenAssignmentFile(Assignment? assignment)
+    {
+        if (assignment == null) return;
+
+        var doc = _db.Documents.FirstOrDefault(d => d.Id == assignment.DocumentId);
+        if (doc == null || string.IsNullOrEmpty(doc.FilePath)) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(doc.FilePath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Не удалось открыть файл: {ex.Message}");
+        }
+    }
+
+    private void DeleteAssignment(Assignment? assignment)
+    {
+        if (assignment == null) return;
+
+        var assignmentInDb = _db.Assignments.Find(assignment.Id);
+        if (assignmentInDb != null)
+        {
+            var doc = _db.Documents.Find(assignmentInDb.DocumentId);
+            if (doc != null)
+            {
+                _db.Documents.Remove(doc);
+            }
+
+            _db.Assignments.Remove(assignmentInDb);
+            _db.SaveChanges();
+
+            Assignments.Remove(assignment);
+        }
+    }
+
+    #endregion
+
+    #region Методы для лекций
+
     private bool CanAddLecture()
     {
         return !string.IsNullOrWhiteSpace(NewLectureTitle)
@@ -287,25 +436,6 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         UploadedLectureFilePath = null;
     }
 
-
-
-    private void OpenAssignmentFile(Assignment? assignment)
-    {
-        if (assignment == null) return;
-
-        var doc = _db.Documents.FirstOrDefault(d => d.Id == assignment.DocumentId);
-        if (doc == null || string.IsNullOrEmpty(doc.FilePath)) return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(doc.FilePath) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show($"Не удалось открыть файл: {ex.Message}");
-        }
-    }
-
     private void OpenLectureFile(Lecture? lecture)
     {
         if (lecture == null) return;
@@ -350,25 +480,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         }
     }
 
-    private void DeleteAssignment(Assignment? assignment)
-    {
-        if (assignment == null) return;
-
-        var assignmentInDb = _db.Assignments.Find(assignment.Id);
-        if (assignmentInDb != null)
-        {
-            var doc = _db.Documents.Find(assignmentInDb.DocumentId);
-            if (doc != null)
-            {
-                _db.Documents.Remove(doc);
-            }
-
-            _db.Assignments.Remove(assignmentInDb);
-            _db.SaveChanges();
-
-            Assignments.Remove(assignment);
-        }
-    }
+    #endregion
 
     private void RaiseCanExecuteChanged()
     {
