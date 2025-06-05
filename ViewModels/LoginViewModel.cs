@@ -54,6 +54,8 @@ public class LoginViewModel : INotifyPropertyChanged
                 }
 
                 Teacher? teacher = null;
+                Student? student = null;
+
                 if (roles.Contains("Teacher"))
                 {
                     teacher = await _dbContext.Teachers.FirstOrDefaultAsync(t => t.UserId == user.Id);
@@ -70,15 +72,29 @@ public class LoginViewModel : INotifyPropertyChanged
                         await _dbContext.SaveChangesAsync();
                     }
                 }
+                else if (roles.Contains("Student"))
+                {
+                    student = await _dbContext.Students.FirstOrDefaultAsync(s => s.UserId == user.Id);
+                    if (student == null)
+                    {
+                        student = new Student
+                        {
+                            UserId = user.Id,
+                            Name = user.Name,
+                            MiddleName = user.MiddleName ?? string.Empty,
+                            LastName = user.LastName
+                        };
+                        _dbContext.Students.Add(student);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                }
 
                 var primaryRole = roles.Contains("Admin") ? "Admin" :
                                   roles.Contains("Teacher") ? "Teacher" : "Student";
 
-                // Передаём teacher?.Id в UserContext
-                _userContext.SetUser(user.Id, user.UserName, primaryRole, teacher?.Id);
+                _userContext.SetUser(user.Id, user.UserName, primaryRole, teacher?.Id, student?.Id);
 
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-
                 mainWindow.Initialize(_serviceProvider);
                 mainWindow.SetContentForRole(primaryRole);
                 mainWindow.Show();
@@ -98,6 +114,7 @@ public class LoginViewModel : INotifyPropertyChanged
             MessageBox.Show($"Ошибка входа: {ex.Message}");
         }
     }
+
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>

@@ -42,21 +42,28 @@ public class AuthService
         var roles = await _userManager.GetRolesAsync(user);
 
         int? teacherId = null;
+        int? studentId = null;
 
         if (roles.Contains("Teacher"))
         {
-            // Ищем запись в таблице Teachers по UserId
             teacherId = await _dbContext.Teachers
-                 .Where(t => t.UserId == user.Id)
-                 .Select(t => (int?)t.Id)
-                 .FirstOrDefaultAsync(); 
-
+                .Where(t => t.UserId == user.Id)
+                .Select(t => (int?)t.Id)
+                .FirstOrDefaultAsync();
+        }
+        else if (roles.Contains("Student"))
+        {
+            studentId = await _dbContext.Students
+                .Where(s => s.UserId == user.Id)
+                .Select(s => (int?)s.Id)
+                .FirstOrDefaultAsync();
         }
 
-        _userContext.SetUser(user.Id, user.UserName, roles.FirstOrDefault() ?? string.Empty, teacherId);
+        _userContext.SetUser(user.Id, user.UserName, roles.FirstOrDefault() ?? string.Empty, teacherId, studentId);
 
         return roles;
     }
+
 
 
 

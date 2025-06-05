@@ -12,15 +12,18 @@ namespace IntellectFlow.Helpers
         public string UserName { get; private set; }
         public string UserRole { get; private set; }
         public int? TeacherId { get; private set; }
+        public int? StudentId { get; private set; }  // Добавлено
 
-        public void SetUser(int userId, string userName, string userRole, int? teacherId = null)
+        public void SetUser(int userId, string userName, string userRole, int? teacherId = null, int? studentId = null)
         {
             UserId = userId;
             UserName = userName;
             UserRole = userRole;
             TeacherId = teacherId;
+            StudentId = studentId;  // Инициализация
         }
     }
+
 
 
 }
