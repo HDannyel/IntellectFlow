@@ -139,20 +139,7 @@ namespace IntellectFlow.ViewModels
             foreach (var d in _db.Disciplines.OrderBy(d => d.Name))
                 AllDisciplines.Add(d);
 
-            MyDisciplines.Clear();
-            var disciplineIdsWithCourses = _db.Courses
-                .Where(c => c.TeacherId == TeacherId)
-                .Select(c => c.DisciplineId)
-                .Distinct()
-                .ToList();
-
-            var disciplines = _db.Disciplines
-                .Where(d => disciplineIdsWithCourses.Contains(d.Id))
-                .OrderBy(d => d.Name)
-                .ToList();
-
-            foreach (var d in disciplines)
-                MyDisciplines.Add(d);
+            UpdateMyDisciplines();
 
             MyCourses.Clear();
             foreach (var c in _db.Courses.Where(c => c.TeacherId == TeacherId).OrderBy(c => c.Name))
@@ -168,9 +155,27 @@ namespace IntellectFlow.ViewModels
                 AllStudents.Add(student);
         }
 
+        private void UpdateMyDisciplines()
+        {
+            MyDisciplines.Clear();
+            var disciplineIdsWithCourses = _db.Courses
+                .Where(c => c.TeacherId == TeacherId)
+                .Select(c => c.DisciplineId)
+                .Distinct()
+                .ToList();
+
+            var disciplines = _db.Disciplines
+                .Where(d => disciplineIdsWithCourses.Contains(d.Id))
+                .OrderBy(d => d.Name)
+                .ToList();
+
+            foreach (var d in disciplines)
+                MyDisciplines.Add(d);
+        }
+
         private void UpdateAvailableCourses()
         {
-            // Если нужно, можно добавить фильтрацию курсов по дисциплине
+            // Можно реализовать, если нужно фильтровать курсы по дисциплине
         }
 
         private void LoadStudentsInCourse()
@@ -234,6 +239,9 @@ namespace IntellectFlow.ViewModels
             _db.SaveChanges();
 
             MyCourses.Add(course);
+
+            // Обновляем список "Мои дисциплины" после добавления курса
+            UpdateMyDisciplines();
 
             CourseName = string.Empty;
             CourseDescription = string.Empty;
