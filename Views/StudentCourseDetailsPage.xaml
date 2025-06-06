@@ -1,13 +1,12 @@
-﻿<Window
-    x:Class="IntellectFlow.Views.StudentCourseDetailsWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Подробности курса"
-    Height="700" Width="900"
-    WindowStartupLocation="CenterScreen">
+﻿<Window x:Class="IntellectFlow.Views.StudentCourseDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:IntellectFlow.DataModel"
+        Title="Подробности курса"
+        Height="700" Width="900"
+        WindowStartupLocation="CenterScreen">
 
     <Grid Margin="10">
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="2*"/>
@@ -47,13 +46,46 @@
 
         <!-- Список заданий -->
         <GroupBox Header="Задания" Grid.Row="2" Margin="0,0,0,10">
-            <ListView ItemsSource="{Binding StudentAssignments}" SelectedItem="{Binding SelectedStudentAssignment}">
+            <ListView ItemsSource="{Binding StudentAssignments}" 
+                      SelectedItem="{Binding SelectedStudentAssignment}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Название" Width="250" DisplayMemberBinding="{Binding Assignment.Title}"/>
-                        <GridViewColumn Header="Срок сдачи по" Width="150" DisplayMemberBinding="{Binding Assignment.DueDate}"/>
-                        <GridViewColumn Header="Статус" Width="120" DisplayMemberBinding="{Binding DisplayStatus}"/>
+                        <GridViewColumn Header="Срок сдачи" Width="150" DisplayMemberBinding="{Binding Assignment.DueDate}"/>
+
+                        <!-- Статус с цветом -->
+                        <GridViewColumn Header="Статус" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayStatus}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="Gray"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Submission.Status}" Value="{x:Static models:SubmissionStatus.Checked}">
+                                                        <Setter Property="Foreground" Value="Green"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Submission.Status}" Value="{x:Static models:SubmissionStatus.Rejected}">
+                                                        <Setter Property="Foreground" Value="Red"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Submission.Status}" Value="{x:Static models:SubmissionStatus.Pending}">
+                                                        <Setter Property="Foreground" Value="Orange"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Submission.Status}" Value="{x:Static models:SubmissionStatus.Submitted}">
+                                                        <Setter Property="Foreground" Value="#0078D7"/>
+                                                        <!-- Синий -->
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
                         <GridViewColumn Header="Оценка" Width="80" DisplayMemberBinding="{Binding Submission.TeacherScore}"/>
+
+                        <!-- Действия -->
                         <GridViewColumn Header="Действия">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -73,15 +105,19 @@
             </ListView>
         </GroupBox>
 
+        <!-- Детали решения -->
         <GroupBox Header="Детали решения" Grid.Row="3">
-            <StackPanel>
+            <StackPanel Margin="10,5,10,10">
+            
                 <!-- Комментарий преподавателя -->
-                <TextBlock Text="Комментарий преподавателя:" FontWeight="Bold" Margin="10,10,0,5"/>
-                <TextBox Text="{Binding SelectedStudentAssignment.Submission.TeacherComment}" 
-                 IsReadOnly="True" TextWrapping="Wrap" Height="60"/>
+                <TextBlock Text="Комментарий преподавателя:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBox Text="{Binding SelectedStudentAssignment.Submission.TeacherComment, FallbackValue=Комментарий отсутствует}"
+                         IsReadOnly="True" 
+                         TextWrapping="Wrap" 
+                         Height="60"
+                         VerticalScrollBarVisibility="Auto"/>
             </StackPanel>
         </GroupBox>
-
 
     </Grid>
 </Window>
