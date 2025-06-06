@@ -90,13 +90,14 @@ namespace IntellectFlow.ViewModels
         {
             if (SelectedCourse == null) return;
 
-            var courseDetailsVM = new CourseDetailsViewModel(_db, SelectedCourse.Id);
-            var courseDetailsWindow = new CourseDetailsWindow
+            var vm = new StudentCourseDetailsViewModel(_db, SelectedCourse.Id, _studentId);
+            var window = new StudentCourseDetailsWindow
             {
-                DataContext = courseDetailsVM
+                DataContext = vm
             };
-            courseDetailsWindow.ShowDialog();
+            window.ShowDialog();
         }
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>

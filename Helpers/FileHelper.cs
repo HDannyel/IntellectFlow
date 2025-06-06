@@ -16,11 +16,7 @@ namespace IntellectFlow.Helpers
             _rootFolder = rootFolder;
         }
 
-        /// <summary>
-        /// Возвращает полный путь для хранения файла преподавателя,
-        /// создаёт папки, если их нет.
-        /// Путь: /Files/Teachers/{TeacherName}/{DisciplineName}/{CourseName}/{fileType}/
-        /// </summary>
+
         public string GetTeacherFilePath(string teacherName, string disciplineName, string courseName, string fileType, string fileName)
         {
             // Формируем путь по частям
@@ -34,10 +30,18 @@ namespace IntellectFlow.Helpers
             // Полный путь к файлу
             return Path.Combine(path, fileName);
         }
+        public string GetStudentFilePath(string studentName, string disciplineName, string courseName, string fileType, string fileName)
+        {
+            var path = Path.Combine(_rootFolder, "Students", SanitizeFileName(studentName),
+                SanitizeFileName(disciplineName), SanitizeFileName(courseName), SanitizeFileName(fileType));
 
-        /// <summary>
-        /// Убирает недопустимые символы из имени папки или файла
-        /// </summary>
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            return Path.Combine(path, fileName);
+        }
+
+
         private string SanitizeFileName(string name)
         {
             foreach (var c in Path.GetInvalidFileNameChars())

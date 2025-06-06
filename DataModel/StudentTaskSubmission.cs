@@ -13,6 +13,7 @@ namespace IntellectFlow.DataModel
         public Student Student { get; set; } = null!;
         public int AssignmentId { get; set; }
         public Assignment Assignment { get; set; } = null!;
+
         public required string SubmissionText { get; set; } // Ответ студента
         public DateTime SubmissionDate { get; set; } = DateTime.UtcNow;
         public int? AiScore { get; set; } // Оценка от нейросети
@@ -22,7 +23,12 @@ namespace IntellectFlow.DataModel
         public string? TeacherComment { get; set; } // Комментарий преподавателя
         public bool IsTeacherChecked { get; set; } = false;
         public SubmissionStatus Status { get; set; }
+
+        // Добавляем связь с файлом решения
+        public int? DocumentId { get; set; }
+        public Document? Document { get; set; }
     }
+
     public enum SubmissionStatus
     {
         Pending,

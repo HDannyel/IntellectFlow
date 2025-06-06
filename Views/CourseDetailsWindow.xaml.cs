@@ -23,5 +23,13 @@ namespace IntellectFlow.Views
         {
             InitializeComponent();
         }
+        private void Students_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (DataContext is CourseDetailsViewModel viewModel && viewModel.SelectedStudentInCourse != null)
+            {
+                viewModel.OpenStudentTasks(viewModel.SelectedStudentInCourse);
+            }
+        }
+
     }
 }

@@ -92,21 +92,41 @@
             <!-- Студенты -->
             <TabItem Header="Студенты">
                 <StackPanel Margin="5">
-                    <!-- Список студентов на курсе -->
-                    <TextBlock Text="Студенты на курсе:" FontWeight="Bold" Margin="0 0 0 5"/>
-                    <ListBox ItemsSource="{Binding StudentsInCourse}"
-                 SelectedItem="{Binding SelectedStudentInCourse}"
-                 DisplayMemberPath="FullName"
-                 Height="200"
-                 Margin="0 0 0 10"/>
 
-                    <!-- Кнопка удаления студента -->
+                    <!-- Заголовок списка студентов -->
+                    <TextBlock Text="Студенты на курсе:" FontWeight="Bold" Margin="0 0 0 5"/>
+
+                    <!-- ListView со списком студентов и обработчиком двойного клика -->
+                    <ListView ItemsSource="{Binding StudentsInCourse}"
+                  SelectedItem="{Binding SelectedStudentInCourse}"
+                  x:Name="StudentsListBox"
+                  DisplayMemberPath="FullName"
+                  Height="200"
+                  Margin="0 0 0 10">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <EventSetter Event="MouseDoubleClick" Handler="Students_DoubleClick"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+
+                    <!-- Кнопка "Удалить студента из курса" -->
                     <Button Content="Удалить студента из курса"
                 Command="{Binding RemoveStudentFromCourseCommand}"
                 Padding="8"
                 Margin="0 0 0 15"
                 HorizontalAlignment="Left"
                 IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Новая кнопка: Посмотреть задачи студента -->
+                    <Button Content="Посмотреть задачи студента"
+                Command="{Binding ShowStudentTasksCommand}"
+                CommandParameter="{Binding SelectedStudentInCourse}"
+                Padding="8"
+                Margin="0 0 0 15"
+                HorizontalAlignment="Left"
+                IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
 
                     <!-- Добавление новых студентов -->
                     <TextBlock Text="Добавить студента:" FontWeight="Bold" Margin="0 0 0 5"/>

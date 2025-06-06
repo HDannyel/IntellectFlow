@@ -22,14 +22,17 @@
         <StackPanel Grid.Column="1" Margin="2">
             <TextBlock Text="Мои курсы" FontWeight="Bold" FontSize="16" Margin="0 0 0 8"/>
             <ListBox ItemsSource="{Binding MyCourses}" 
-                     SelectedItem="{Binding SelectedCourse, Mode=TwoWay}"
-                     DisplayMemberPath="Name"
-                     Height="300" />
+         SelectedItem="{Binding SelectedCourse, Mode=TwoWay}"
+         DisplayMemberPath="Name"
+         Height="300"
+         MouseDoubleClick="CoursesListBox_MouseDoubleClick" />
+
             <Button Content="Открыть детали курса" 
                     Margin="0 6 0 0"
                     Height="30"
                     Command="{Binding OpenCourseDetailsCommand}"
                     IsEnabled="{Binding SelectedCourse}" />
+            
         </StackPanel>
     </Grid>
 </UserControl>

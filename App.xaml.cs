@@ -67,6 +67,9 @@ namespace IntellectFlow
             services.AddTransient<AdminViewModel>();
             services.AddTransient<TeacherViewModel>();
             services.AddTransient<StudentViewModel>();
+            services.AddTransient<CourseDetailsViewModel>(); 
+            services.AddTransient<StudentSubmissionsViewModel>();
+
             services.AddSingleton<IUserContext, UserContext>();
 
             services.AddTransient<LoginView>();
@@ -74,6 +77,8 @@ namespace IntellectFlow
             services.AddTransient<AdminView>();
             services.AddTransient<TeacherView>();
             services.AddTransient<StudentView>();
+            services.AddTransient<CourseDetailsWindow>(); 
+            services.AddTransient<StudentSubmissionsView>();
         }
     }
 }

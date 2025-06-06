@@ -9,6 +9,9 @@ using System.Diagnostics;
 using IntellectFlow.Helpers;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
+using IntellectFlow.Views;
+using IntellectFlow.ViewModels;
+using System.Windows;
 
 public class CourseDetailsViewModel : INotifyPropertyChanged
 {
@@ -39,6 +42,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             _ => SelectedStudentToAdd != null && Course != null);
         RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudentFromCourse(),
             _ => SelectedStudentInCourse != null && Course != null);
+        ShowStudentTasksCommand = new RelayCommand(OpenStudentTasks);
     }
 
     // Основные свойства
@@ -167,7 +171,37 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     public ICommand DeleteAssignmentCommand { get; }
     public ICommand AddStudentToCourseCommand { get; }
     public ICommand RemoveStudentFromCourseCommand { get; }
+    public ICommand ShowStudentTasksCommand { get; }
+ 
 
+    private readonly INavigationService _navigationService;
+    public void OpenStudentTasks(object param)
+    {
+        if (param is Student student && Course != null)
+        {
+            var viewModel = new StudentSubmissionsViewModel(_db, Course.Id, student.Id);
+            var window = new StudentSubmissionsView
+            {
+                DataContext = viewModel
+            };
+            window.Owner = Application.Current.MainWindow;
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.ShowDialog(); // или window.Show() для немодального окна
+        }
+    }
+    public CourseDetailsViewModel(IntellectFlowDbContext db, int courseId, INavigationService navigationService)
+    {
+        _db = db;
+        _courseId = courseId;
+        _navigationService = navigationService;
+
+        string rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files");
+        _fileHelper = new FileHelper(rootFolder);
+        LoadCourseDetails();
+
+        // Команды...
+        ShowStudentTasksCommand = new RelayCommand(OpenStudentTasks);
+    }
     private void LoadCourseDetails()
     {
         Course = _db.Courses
@@ -193,7 +227,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     }
 
     #region Методы для работы со студентами
-
+   
     private void LoadStudentsInCourse()
     {
         StudentsInCourse.Clear();

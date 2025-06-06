@@ -21,6 +21,16 @@ namespace IntellectFlow.Views
             var context = serviceProvider.GetRequiredService<IntellectFlowDbContext>();
             DataContext = new StudentViewModel(context, userContext.StudentId.Value);
         }
+        private void CoursesListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var viewModel = DataContext as StudentViewModel;
+
+            if (viewModel?.SelectedCourse != null)
+            {
+                viewModel.OpenCourseDetailsCommand.Execute(null);
+            }
+        }
+
     }
 
 }
