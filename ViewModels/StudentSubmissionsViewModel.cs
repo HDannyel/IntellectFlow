@@ -6,9 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.IO;
 
 namespace IntellectFlow.ViewModels
 {
@@ -31,6 +33,7 @@ namespace IntellectFlow.ViewModels
                     _selectedAssignment = value;
                     OnPropertyChanged(nameof(SelectedAssignment));
                     (SaveChangesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (OpenSubmissionFileCommand as RelayCommand)?.RaiseCanExecuteChanged(); // <-- Это важно
                 }
             }
         }
@@ -94,9 +97,15 @@ namespace IntellectFlow.ViewModels
         {
             if (SelectedAssignment?.Submission?.Document is Document doc && !string.IsNullOrEmpty(doc.FilePath))
             {
+                if (!File.Exists(doc.FilePath))
+                {
+                    MessageBox.Show("Файл не найден на диске.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
                 try
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(doc.FilePath)
+                    Process.Start(new ProcessStartInfo(doc.FilePath)
                     {
                         UseShellExecute = true,
                         Verb = "open"
@@ -113,6 +122,7 @@ namespace IntellectFlow.ViewModels
         {
             var assignments = _db.Assignments.Where(a => a.CourseId == _courseId).ToList();
             var submissions = _db.StudentTaskSubmissions
+                .Include(s => s.Document) // <-- ЗДЕСЬ мы загружаем Document
                 .Where(s => s.StudentId == _studentId)
                 .ToList();
 

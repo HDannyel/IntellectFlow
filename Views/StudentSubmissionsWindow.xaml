@@ -60,9 +60,9 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="Открыть"
-                                        Command="{Binding DataContext.OpenSubmissionFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                        IsEnabled="{Binding Submission.Document.FilePath, Converter={StaticResource NullToFalseConverter}}"
-                                        ToolTip="Открыть файл студента" />
+                    Command="{Binding DataContext.OpenSubmissionFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                    IsEnabled="{Binding SubmissionFilePath, Converter={StaticResource NullToFalseConverter}}"
+                    ToolTip="Открыть файл студента" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
