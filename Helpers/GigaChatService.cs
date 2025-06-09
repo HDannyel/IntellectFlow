@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using IntellectFlow.DataModel;
 
 namespace IntellectFlow.Helpers
 {
@@ -135,15 +136,18 @@ namespace IntellectFlow.Helpers
             if (!string.IsNullOrEmpty(assignmentFilePath) && File.Exists(assignmentFilePath))
             {
                 assignmentContent = await ReadFileContentWithLimit(assignmentFilePath, 5000);
+                Debug.WriteLine($"Прочитан файл задания: {assignmentContent.Substring(0, Math.Min(100, assignmentContent.Length))}");
             }
             else if (!string.IsNullOrEmpty(assignmentText))
             {
                 assignmentContent = assignmentText;
+                Debug.WriteLine($"Используется описание задания: {assignmentContent.Substring(0, Math.Min(100, assignmentContent.Length))}");
             }
             else
             {
                 throw new ArgumentException("Не удалось получить текст задания");
             }
+
 
             // Get submission content
             if (!string.IsNullOrEmpty(submissionFilePath) && File.Exists(submissionFilePath))
@@ -197,7 +201,7 @@ namespace IntellectFlow.Helpers
 
             var payload = new
             {
-                model = "GigaChat",
+                model = "GigaChat-Max",
                 messages,
                 temperature = 0.7,
                 max_tokens = 1000

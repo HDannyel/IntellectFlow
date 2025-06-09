@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.Win32;
+using System.Windows;
 
 namespace IntellectFlow.ViewModels
 {
@@ -81,15 +83,86 @@ namespace IntellectFlow.ViewModels
         public ICommand DownloadLectureFileCommand => new RelayCommand(param => DownloadLectureFile(param as Lecture));
         public ICommand DownloadAssignmentCommand => new RelayCommand(param => DownloadAssignment(param as Assignment));
         public ICommand UploadSolutionCommand => new RelayCommand(param => UploadSolution(param as Assignment));
+        public ICommand UploadAssignmentCommand => new RelayCommand(param => UploadAssignment(param as Assignment));
 
-        private void DownloadAssignment(Assignment? assignment)
+
+        private void UploadAssignment(Assignment assignment)
         {
-            if (assignment?.DocumentId == null) return;
-
-            var doc = _db.Documents.FirstOrDefault(d => d.Id == assignment.DocumentId);
-            if (doc != null && File.Exists(doc.FilePath))
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
             {
-                DownloadFile(doc.FilePath);
+                string filePath = openFileDialog.FileName;
+
+                // Получаем данные преподавателя из контекста
+                string teacherName = Course?.Discipline?.Teacher?.FullName ?? "DefaultTeacher";
+                string disciplineName = Course?.Discipline?.Name ?? "DefaultDiscipline";
+                string courseName = Course?.Name ?? "DefaultCourse";
+
+                // Генерируем путь через FileHelper
+                string destFilePath = _fileHelper.GetTeacherFilePath(
+                    teacherName,
+                    disciplineName,
+                    courseName,
+                    "Assignments",
+                    Path.GetFileName(filePath)
+                );
+
+                // Копируем файл
+                File.Copy(filePath, destFilePath, overwrite: true);
+
+                // Создаем или обновляем документ
+                if (assignment.Document == null)
+                {
+                    assignment.Document = new Document
+                    {
+                        FileName = Path.GetFileName(destFilePath),
+                        FilePath = destFilePath,
+                        ContentType = MimeTypes.GetMimeType(destFilePath)
+                    };
+                    _db.Documents.Add(assignment.Document);
+                }
+                else
+                {
+                    assignment.Document.FileName = Path.GetFileName(destFilePath);
+                    assignment.Document.FilePath = destFilePath;
+                    assignment.Document.ContentType = MimeTypes.GetMimeType(destFilePath);
+                }
+
+                _db.SaveChanges();
+                LoadCourseDetails();
+                MessageBox.Show("Файл задания успешно загружен", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        private void DownloadAssignment(Assignment assignment)
+        {
+            if (assignment?.Document == null) return;
+
+            // Пытаемся найти файл по сохраненному пути
+            if (File.Exists(assignment.Document.FilePath))
+            {
+                DownloadFile(assignment.Document.FilePath);
+                return;
+            }
+
+            // Если файл не найден, пробуем восстановить путь
+            string expectedPath = _fileHelper.GetTeacherFilePath(
+                Course?.Discipline?.Teacher?.FullName ?? "DefaultTeacher",
+                Course?.Discipline?.Name ?? "DefaultDiscipline",
+                Course?.Name ?? "DefaultCourse",
+                "Assignments",
+                assignment.Document.FileName
+            );
+
+            if (File.Exists(expectedPath))
+            {
+                // Обновляем путь в базе
+                assignment.Document.FilePath = expectedPath;
+                _db.SaveChanges();
+                DownloadFile(expectedPath);
+            }
+            else
+            {
+                MessageBox.Show("Файл задания не найден", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

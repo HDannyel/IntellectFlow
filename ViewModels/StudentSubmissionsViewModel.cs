@@ -120,9 +120,13 @@ namespace IntellectFlow.ViewModels
 
         private void LoadStudentAssignments()
         {
-            var assignments = _db.Assignments.Where(a => a.CourseId == _courseId).ToList();
+            var assignments = _db.Assignments
+                .Include(a => a.Document)  // <-- ДОБАВИТЬ подгрузку Document
+                .Where(a => a.CourseId == _courseId)
+                .ToList();
+
             var submissions = _db.StudentTaskSubmissions
-                .Include(s => s.Document) // <-- ЗДЕСЬ мы загружаем Document
+                .Include(s => s.Document) // Уже есть подгрузка
                 .Where(s => s.StudentId == _studentId)
                 .ToList();
 
@@ -141,6 +145,7 @@ namespace IntellectFlow.ViewModels
                 });
             }
         }
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
