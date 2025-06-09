@@ -12,7 +12,7 @@ namespace IntellectFlow.DataModel
         public string LastName { get; set; } = null!;
         public string FullName => $"{Name} {MiddleName} {LastName}";
 
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public User User { get; set; } = null!;
 
         public ICollection<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>();

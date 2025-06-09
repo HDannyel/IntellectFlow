@@ -271,10 +271,18 @@ namespace IntellectFlow.ViewModels
         {
             var addStudentWindow = new AddStudentWindow(_dbContext);
             if (addStudentWindow.ShowDialog() == true)
-            {
-                _dbContext.Students.Add(addStudentWindow.NewStudent);
-                _dbContext.SaveChanges();
-                Students.Add(addStudentWindow.NewStudent);
+            {   
+                // Перезагружаем студента с группами
+                var addedStudent = _dbContext.Students
+                    .Include(s => s.User)
+                    .Include(s => s.StudentGroups)
+                        .ThenInclude(sg => sg.Group)
+                    .FirstOrDefault(s => s.Id == addStudentWindow.NewStudent.Id);
+
+                if (addedStudent != null)
+                {
+                    Students.Add(addedStudent);
+                }
             }
         }
         public async Task AddCourseAsync()

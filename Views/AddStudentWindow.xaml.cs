@@ -39,31 +39,30 @@ namespace IntellectFlow.Views
 
             var selectedGroup = (Group)GroupComboBox.SelectedItem;
 
-            // Если группа не отслеживается контекстом — добавить
-            if (_dbContext.Entry(selectedGroup).State == EntityState.Detached)
-            {
-                _dbContext.Groups.Attach(selectedGroup);
-            }
-
-            // Создание нового студента
-            NewStudent = new Student
+            // Создаем нового студента
+            var newStudent = new Student
             {
                 Name = NameTextBox.Text.Trim(),
                 MiddleName = MidleNameTextBox.Text.Trim(),
                 LastName = LastNameTextBox.Text.Trim(),
-                StudentGroups = new List<StudentGroup>
-        {
-            new StudentGroup
-            {
-                Group = selectedGroup
-            }
-        }
+                UserId = null, // Пока нет пользователя
+                StudentGroups = new List<StudentGroup>()
             };
 
-            // Сохраняем студента и связь
-            _dbContext.Students.Add(NewStudent);
+            _dbContext.Students.Add(newStudent);
+            _dbContext.SaveChanges(); // Чтобы получить Student.Id
+
+            // Добавляем связь с группой
+            var studentGroup = new StudentGroup
+            {
+                StudentId = newStudent.Id,
+                GroupId = selectedGroup.Id
+            };
+
+            _dbContext.StudentGroups.Add(studentGroup);
             _dbContext.SaveChanges();
 
+            NewStudent = newStudent;
             DialogResult = true;
             Close();
         }
