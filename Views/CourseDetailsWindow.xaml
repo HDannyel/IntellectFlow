@@ -4,7 +4,108 @@
         Title="Детали курса" Height="600" Width="800">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+        <!-- Стиль для всех кнопок -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="Margin" Value="5,0,5,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#357ABD"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2C5AA0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#A0A0A0"/>
+                                <Setter Property="Foreground" Value="#E0E0E0"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Специальный стиль для кнопок удаления -->
+        <Style TargetType="Button" x:Key="DeleteButtonStyle" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#E06C75"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#C43D3D"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#A53131"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#D9A2A2"/>
+                                <Setter Property="Foreground" Value="#E0E0E0"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Стиль для TextBlock заголовков -->
+        <Style TargetType="TextBlock" x:Key="SectionHeader">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+        </Style>
+
+        <!-- Стиль для TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="BorderBrush" Value="#4A90E2"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Стиль для DatePicker -->
+        <Style TargetType="DatePicker">
+            <Setter Property="BorderBrush" Value="#4A90E2"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <!-- Стиль для ListView -->
+        <Style TargetType="ListView">
+            <Setter Property="BorderBrush" Value="#4A90E2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
     </Window.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,8 +115,8 @@
 
         <!-- Заголовок курса -->
         <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0 0 0 10">
-            <TextBlock Text="{Binding Course.Name}" FontWeight="Bold" FontSize="16"/>
-            <TextBlock Text="{Binding Course.Description}" FontStyle="Italic" Margin="0 5 0 0"/>
+            <TextBlock Text="{Binding Course.Name}" FontWeight="Bold" FontSize="16" Foreground="#34495E"/>
+            <TextBlock Text="{Binding Course.Description}" FontStyle="Italic" Margin="0 5 0 0" Foreground="#7F8C8D"/>
         </StackPanel>
 
         <!-- Вкладки: Лекции, Задания, Студенты -->
@@ -33,15 +134,16 @@
                                             Command="{Binding DataContext.OpenLectureFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}" Margin="5 0"/>
                                     <Button Content="Удалить"
+                                            Style="{StaticResource DeleteButtonStyle}"
                                             Command="{Binding DataContext.DeleteLectureCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}" Margin="5 0" Background="LightCoral"/>
+                                            CommandParameter="{Binding}" Margin="5 0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
                     <!-- Форма добавления лекции -->
-                    <TextBlock Text="Название лекции:" Margin="10 10 0 2"/>
+                    <TextBlock Text="Название лекции:" Style="{StaticResource SectionHeader}" Margin="10 10 0 2"/>
                     <TextBox Text="{Binding NewLectureTitle, UpdateSourceTrigger=PropertyChanged}" Height="30"/>
 
                     <Button Content="Загрузить файл лекции" Command="{Binding UploadLectureFileCommand}" Margin="0 10 0 0"/>
@@ -63,22 +165,23 @@
                                             Command="{Binding DataContext.OpenAssignmentFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}" Margin="5 0"/>
                                     <Button Content="Удалить"
+                                            Style="{StaticResource DeleteButtonStyle}"
                                             Command="{Binding DataContext.DeleteAssignmentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}" Margin="5 0" Background="LightCoral"/>
+                                            CommandParameter="{Binding}" Margin="5 0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
                     <!-- Форма добавления задания -->
-                    <TextBlock Text="Название задания:" Margin="10 10 0 2"/>
+                    <TextBlock Text="Название задания:" Style="{StaticResource SectionHeader}" Margin="10 10 0 2"/>
                     <TextBox Text="{Binding NewAssignmentTitle, UpdateSourceTrigger=PropertyChanged}" Height="30"/>
 
-                    <TextBlock Text="Описание задания:" Margin="0 5 0 2"/>
+                    <TextBlock Text="Описание задания:" Style="{StaticResource SectionHeader}" Margin="0 5 0 2"/>
                     <TextBox Text="{Binding NewAssignmentDescription, UpdateSourceTrigger=PropertyChanged}" 
                              AcceptsReturn="True" Height="60"/>
 
-                    <TextBlock Text="Срок сдачи:" Margin="0 5 0 2"/>
+                    <TextBlock Text="Срок сдачи:" Style="{StaticResource SectionHeader}" Margin="0 5 0 2"/>
                     <DatePicker SelectedDate="{Binding NewAssignmentDueDate}"/>
 
                     <Button Content="Загрузить файл" Command="{Binding UploadFileCommand}" Margin="0 10 0 0"/>
@@ -88,21 +191,20 @@
                 </StackPanel>
             </TabItem>
 
-
             <!-- Студенты -->
             <TabItem Header="Студенты">
                 <StackPanel Margin="5">
 
                     <!-- Заголовок списка студентов -->
-                    <TextBlock Text="Студенты на курсе:" FontWeight="Bold" Margin="0 0 0 5"/>
+                    <TextBlock Text="Студенты на курсе:" Style="{StaticResource SectionHeader}" Margin="0 0 0 5"/>
 
                     <!-- ListView со списком студентов и обработчиком двойного клика -->
                     <ListView ItemsSource="{Binding StudentsInCourse}"
-                  SelectedItem="{Binding SelectedStudentInCourse}"
-                  x:Name="StudentsListBox"
-                  DisplayMemberPath="FullName"
-                  Height="200"
-                  Margin="0 0 0 10">
+                              SelectedItem="{Binding SelectedStudentInCourse}"
+                              x:Name="StudentsListBox"
+                              DisplayMemberPath="FullName"
+                              Height="200"
+                              Margin="0 0 0 10">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <EventSetter Event="MouseDoubleClick" Handler="Students_DoubleClick"/>
@@ -112,34 +214,33 @@
 
                     <!-- Кнопка "Удалить студента из курса" -->
                     <Button Content="Удалить студента из курса"
-                Command="{Binding RemoveStudentFromCourseCommand}"
-                Padding="8"
-                Margin="0 0 0 15"
-                HorizontalAlignment="Left"
-                IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            Command="{Binding RemoveStudentFromCourseCommand}"
+                            Padding="8"
+                            Margin="0 0 0 15"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- Новая кнопка: Посмотреть задачи студента -->
                     <Button Content="Посмотреть задачи студента"
-                Command="{Binding ShowStudentTasksCommand}"
-                CommandParameter="{Binding SelectedStudentInCourse}"
-                Padding="8"
-                Margin="0 0 0 15"
-                HorizontalAlignment="Left"
-                IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
+                            Command="{Binding ShowStudentTasksCommand}"
+                            CommandParameter="{Binding SelectedStudentInCourse}"
+                            Padding="8"
+                            Margin="0 0 0 15"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- Добавление новых студентов -->
-                    <TextBlock Text="Добавить студента:" FontWeight="Bold" Margin="0 0 0 5"/>
+                    <TextBlock Text="Добавить студента:" Style="{StaticResource SectionHeader}" Margin="0 0 0 5"/>
                     <ComboBox ItemsSource="{Binding AvailableStudents}"
-                  SelectedItem="{Binding SelectedStudentToAdd}"
-                  DisplayMemberPath="FullName"
-                  Margin="0 0 0 10"/>
+                              SelectedItem="{Binding SelectedStudentToAdd}"
+                              DisplayMemberPath="FullName"
+                              Margin="0 0 0 10"/>
 
                     <Button Content="Добавить студента на курс"
-                Command="{Binding AddStudentToCourseCommand}"
-                Padding="8"
-                HorizontalAlignment="Left"
-                IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            Command="{Binding AddStudentToCourseCommand}"
+                            Padding="8"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </TabItem>
         </TabControl>

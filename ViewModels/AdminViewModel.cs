@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Windows;
 using IntellectFlow.Models;
 using System.Linq;
+using IntellectFlow.Views;
 
 namespace IntellectFlow.ViewModels
 {
@@ -25,9 +26,10 @@ namespace IntellectFlow.ViewModels
 
             AddDisciplineCommand = new RelayCommand(async _ => await AddDisciplineAsync(), _ => CanAddDiscipline());
             AddCourseCommand = new RelayCommand(async _ => await AddCourseAsync(), _ => CanAddCourse());
-
+            AddGroupCommand = new RelayCommand(async _ => await AddGroupAsync(), _ => CanAddGroup());
+            DeleteGroupCommand = new RelayCommand(async _ => await DeleteGroupAsync(), _ => CanDeleteGroup());
             DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => CanDeleteUser());
-
+            AddStudentCommand = new RelayCommand(_ => AddStudent());
             DeleteDisciplineCommand = new RelayCommand(async _ => await DeleteDisciplineAsync(), _ => CanDeleteDiscipline());
             DeleteCourseCommand = new RelayCommand(async _ => await DeleteCourseAsync(), _ => CanDeleteCourse());
         }
@@ -36,7 +38,7 @@ namespace IntellectFlow.ViewModels
         {
             var students = await _dbContext.Students.Include(s => s.User).ToListAsync();
             var teachers = await _dbContext.Teachers.Include(t => t.User).ToListAsync();
-
+            var groups = await _dbContext.Groups.ToListAsync();
             var disciplines = await _dbContext.Disciplines.ToListAsync();
             var courses = await _dbContext.Courses.ToListAsync();
 
@@ -57,6 +59,10 @@ namespace IntellectFlow.ViewModels
                 Courses.Clear();
                 foreach (var c in courses)
                     Courses.Add(c);
+
+                Groups.Clear();
+                foreach (var g in groups)
+                    Groups.Add(g);
             });
         }
 
@@ -65,6 +71,10 @@ namespace IntellectFlow.ViewModels
         public ObservableCollection<Teacher> Teachers { get; } = new ObservableCollection<Teacher>();
         public ObservableCollection<Discipline> Disciplines { get; } = new ObservableCollection<Discipline>();
         public ObservableCollection<Course> Courses { get; } = new ObservableCollection<Course>();
+        public ObservableCollection<Group> Groups { get; } = new ObservableCollection<Group>();
+
+
+
 
         // Выбранные элементы
         private Teacher _selectedTeacher;
@@ -127,6 +137,23 @@ namespace IntellectFlow.ViewModels
                 }
             }
         }
+ 
+        private Group _selectedGroup;
+        public Group SelectedGroup
+        {
+            get => _selectedGroup;
+            set
+            {
+                if (_selectedGroup != value)
+                {
+                    _selectedGroup = value;
+                    OnPropertyChanged();
+                    DeleteGroupCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+
 
         // Поля для ввода
         private string _disciplineName;
@@ -156,7 +183,22 @@ namespace IntellectFlow.ViewModels
                 }
             }
         }
+        private string _groupName;
+        public string GroupName
+        {
+            get => _groupName;
+            set
+            {
+                if (_groupName != value)
+                {
+                    _groupName = value;
+                    OnPropertyChanged();
+                    AddGroupCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
 
+    
         private string _courseName;
         public string CourseName
         {
@@ -189,9 +231,11 @@ namespace IntellectFlow.ViewModels
         public RelayCommand AddDisciplineCommand { get; }
         public RelayCommand AddCourseCommand { get; }
         public RelayCommand DeleteUserCommand { get; }
-
+        public RelayCommand AddStudentCommand { get; }
         public RelayCommand DeleteDisciplineCommand { get; }
         public RelayCommand DeleteCourseCommand { get; }
+        public RelayCommand AddGroupCommand { get; }
+        public RelayCommand DeleteGroupCommand { get; }
 
         // Проверки CanExecute
         private bool CanAddDiscipline() => !string.IsNullOrWhiteSpace(DisciplineName);
@@ -223,7 +267,16 @@ namespace IntellectFlow.ViewModels
             DisciplineName = string.Empty;
             DisciplineDescription = string.Empty;
         }
-
+        private void AddStudent()
+        {
+            var addStudentWindow = new AddStudentWindow(_dbContext);
+            if (addStudentWindow.ShowDialog() == true)
+            {
+                _dbContext.Students.Add(addStudentWindow.NewStudent);
+                _dbContext.SaveChanges();
+                Students.Add(addStudentWindow.NewStudent);
+            }
+        }
         public async Task AddCourseAsync()
         {
             if (!CanAddCourse()) return;
@@ -326,6 +379,69 @@ namespace IntellectFlow.ViewModels
             });
         }
 
+
+        // Метод для добавления группы
+        private async Task AddGroupAsync()
+        {
+            if (!CanAddGroup()) return;
+
+            var group = new Group { Name = GroupName.Trim() };
+
+            try
+            {
+                _dbContext.Groups.Add(group);
+                await _dbContext.SaveChangesAsync();
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Groups.Add(group);
+                    GroupName = string.Empty; // Очищаем поле ввода
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при добавлении группы: {ex.Message}");
+            }
+        }
+        private bool CanAddGroup() => !string.IsNullOrWhiteSpace(GroupName);
+
+        // Проверка возможности удаления группы
+        private bool CanDeleteGroup() => SelectedGroup != null;
+
+        // Метод для удаления группы
+        private async Task DeleteGroupAsync()
+        {
+            if (SelectedGroup == null)
+                return;
+
+            // Проверяем, есть ли студенты в группе
+            var hasStudents = await _dbContext.StudentGroups
+                .AnyAsync(sg => sg.GroupId == SelectedGroup.Id);
+
+            if (hasStudents)
+            {
+                MessageBox.Show("Нельзя удалить группу, так как в ней есть студенты.");
+                return;
+            }
+
+            try
+            {
+                _dbContext.Groups.Remove(SelectedGroup);
+                await _dbContext.SaveChangesAsync();
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Groups.Remove(SelectedGroup);
+                    SelectedGroup = null;
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении группы: {ex.Message}");
+            }
+        }
+
+
         // INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -336,6 +452,8 @@ namespace IntellectFlow.ViewModels
             DeleteUserCommand?.RaiseCanExecuteChanged();
             DeleteDisciplineCommand?.RaiseCanExecuteChanged();
             DeleteCourseCommand?.RaiseCanExecuteChanged();
+            AddGroupCommand?.RaiseCanExecuteChanged();
+            DeleteGroupCommand?.RaiseCanExecuteChanged();
         }
     }
 }

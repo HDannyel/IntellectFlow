@@ -4,10 +4,60 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="700" d:DesignWidth="1000">
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="#F9FAFB"
+             FontFamily="Segoe UI, Arial, sans-serif">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+        <!-- Стиль для кнопок -->
+        <Style TargetType="Button">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#357ABD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#357ABD"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2C5AA0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#CCC"/>
+                                <Setter Property="Foreground" Value="#888"/>
+                                <Setter Property="BorderBrush" Value="#AAA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Стиль для заголовков -->
+        <Style TargetType="TextBlock" x:Key="HeaderTextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Foreground" Value="#222"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="10">
@@ -17,47 +67,45 @@
         </Grid.ColumnDefinitions>
 
         <!-- Левая панель -->
-        <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Top">
+        <StackPanel Grid.Column="0" VerticalAlignment="Top">
 
             <!-- Добавление курса -->
-            <TextBlock Text="Добавить курс" FontWeight="Bold" Margin="0,0,0,10"/>
-            <TextBlock Text="Выберите дисциплину:"/>
+            <TextBlock Text="Добавить курс" Style="{StaticResource HeaderTextBlock}"/>
+            <TextBlock Text="Выберите дисциплину:" Margin="0,0,0,4"/>
             <ComboBox ItemsSource="{Binding AllDisciplines}"
                       SelectedItem="{Binding SelectedDiscipline}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>
             <ComboBox ItemsSource="{Binding MyCourses}"
-            SelectedItem="{Binding SelectedCourse}"
-            DisplayMemberPath="Name"
-            Margin="0,0,0,10"/>
-            <TextBlock Text="Название курса:"/>
+                      SelectedItem="{Binding SelectedCourse}"
+                      DisplayMemberPath="Name"
+                      Margin="0,0,0,10"/>
+            <TextBlock Text="Название курса:" Margin="0,0,0,4"/>
             <TextBox Text="{Binding CourseName}" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Описание курса:"/>
-            <TextBox Text="{Binding CourseDescription}" Margin="0,0,0,15" AcceptsReturn="True" Height="60"/>
+            <TextBlock Text="Описание курса:" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding CourseDescription}" AcceptsReturn="True" Height="60" Margin="0,0,0,15"/>
 
             <Button Content="Добавить курс"
                     Command="{Binding AddCourseCommand}"
-                    Padding="8"
-                    Margin="0,0,0,20"
                     IsEnabled="{Binding SelectedDiscipline, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
             <Button Content="Удалить курс"
                     Command="{Binding RemoveCourseCommand}"
-                    Padding="8"
-                    Margin="0,0,0,20"
                     IsEnabled="{Binding SelectedCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <Separator Margin="0,0,0,20"/>
+
+            <Separator Margin="0,20"/>
 
             <!-- Управление студентами -->
-            <TextBlock Text="Управление студентами" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="Управление студентами" Style="{StaticResource HeaderTextBlock}"/>
 
-            <TextBlock Text="Выберите курс:"/>
+            <TextBlock Text="Выберите курс:" Margin="0,0,0,4"/>
             <ComboBox ItemsSource="{Binding MyCourses}"
                       SelectedItem="{Binding SelectedCourse}"
                       DisplayMemberPath="Name"
                       Margin="0,0,0,10"/>
 
-            <TextBlock Text="Студенты на курсе:"/>
+            <TextBlock Text="Студенты на курсе:" Margin="0,0,0,4"/>
             <ComboBox ItemsSource="{Binding StudentsInCourse}"
                       SelectedItem="{Binding SelectedStudentInCourse}"
                       DisplayMemberPath="FullName"
@@ -65,11 +113,9 @@
 
             <Button Content="Удалить студента из курса"
                     Command="{Binding RemoveStudentFromCourseCommand}"
-                    Padding="8"
-                    Margin="0,0,0,15"
                     IsEnabled="{Binding SelectedStudentInCourse, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <TextBlock Text="Добавить студента:"/>
+            <TextBlock Text="Добавить студента:" Margin="0,10,0,4"/>
             <ComboBox ItemsSource="{Binding AvailableStudents}"
                       SelectedItem="{Binding SelectedStudentToAdd}"
                       DisplayMemberPath="FullName"
@@ -77,7 +123,6 @@
 
             <Button Content="Добавить студента"
                     Command="{Binding AddStudentToCourseCommand}"
-                    Padding="8"
                     IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
 
@@ -97,7 +142,6 @@
                          Margin="10"/>
             </TabItem>
 
-            <!-- Вкладка Мои курсы -->
             <TabItem Header="Мои курсы">
                 <ListBox ItemsSource="{Binding MyCourses}"
                          SelectedItem="{Binding SelectedCourse}"
@@ -117,6 +161,5 @@
                          Margin="10"/>
             </TabItem>
         </TabControl>
-
     </Grid>
 </UserControl>

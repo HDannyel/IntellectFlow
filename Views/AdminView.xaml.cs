@@ -1,5 +1,6 @@
 ﻿using IntellectFlow.DataModel;
 using IntellectFlow.Helpers;
+using IntellectFlow.Models;
 using IntellectFlow.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -34,7 +35,9 @@ namespace IntellectFlow.Views
 
         private async void AddStudent_Click(object sender, RoutedEventArgs e)
         {
-            var addStudentWindow = new AddStudentWindow();
+            var dbContext = _serviceProvider.GetRequiredService<IntellectFlowDbContext>();
+            var addStudentWindow = new AddStudentWindow(dbContext);
+
             if (addStudentWindow.ShowDialog() == true)
             {
                 var newStudent = addStudentWindow.NewStudent;
