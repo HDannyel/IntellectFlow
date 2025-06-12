@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using IntellectFlow.DataModel;
+using System.Text.RegularExpressions;
 
 namespace IntellectFlow.Helpers
 {
@@ -123,52 +124,16 @@ namespace IntellectFlow.Helpers
         }
 
         public async Task<(string Comment, int Score)> AnalyzeSubmission(
-            string token,
-            string assignmentFilePath,
-            string assignmentText,
-            string submissionFilePath,
-            string submissionText)
+       string token,
+       string assignmentContent,
+       string submissionContent)
         {
-            string assignmentContent;
-            string submissionContent;
-
-            // Get assignment content
-            if (!string.IsNullOrEmpty(assignmentFilePath) && File.Exists(assignmentFilePath))
-            {
-                assignmentContent = await ReadFileContentWithLimit(assignmentFilePath, 5000);
-                Debug.WriteLine($"Прочитан файл задания: {assignmentContent.Substring(0, Math.Min(100, assignmentContent.Length))}");
-            }
-            else if (!string.IsNullOrEmpty(assignmentText))
-            {
-                assignmentContent = assignmentText;
-                Debug.WriteLine($"Используется описание задания: {assignmentContent.Substring(0, Math.Min(100, assignmentContent.Length))}");
-            }
-            else
-            {
-                throw new ArgumentException("Не удалось получить текст задания");
-            }
-
-
-            // Get submission content
-            if (!string.IsNullOrEmpty(submissionFilePath) && File.Exists(submissionFilePath))
-            {
-                submissionContent = await ReadFileContentWithLimit(submissionFilePath, 5000);
-            }
-            else if (!string.IsNullOrEmpty(submissionText))
-            {
-                submissionContent = submissionText;
-            }
-            else
-            {
-                throw new ArgumentException("Не удалось получить текст ответа студента");
-            }
-
             var messages = new List<ChatMessage>
-            {
-                new ChatMessage
-                {
-                    role = "system",
-                    content = @"Ты - преподаватель, который анализирует решения студентов. Твои задачи:
+    {
+        new ChatMessage
+        {
+            role = "system",
+            content = @"Ты - преподаватель, который анализирует решения студентов. Твои задачи:
 
 1. Сравни ответ студента с исходным заданием
 2. Определи:
@@ -190,14 +155,14 @@ namespace IntellectFlow.Helpers
 Формат ответа:
 КОММЕНТАРИЙ: [твой комментарий]
 ОЦЕНКА: [число от 1 до 5]"
-                },
-                new ChatMessage
-                {
-                    role = "user",
-                    content = $"ИСХОДНОЕ ЗАДАНИЕ:\n{assignmentContent}\n\n" +
-                             $"ОТВЕТ СТУДЕНТА:\n{submissionContent}"
-                }
-            };
+        },
+        new ChatMessage
+        {
+            role = "user",
+            content = $"ИСХОДНОЕ ЗАДАНИЕ:\n{assignmentContent}\n\n" +
+                      $"ОТВЕТ СТУДЕНТА:\n{submissionContent}"
+        }
+    };
 
             var payload = new
             {
@@ -249,52 +214,33 @@ namespace IntellectFlow.Helpers
             }
         }
 
+
         private (string Comment, int Score) ParseAIResponse(string aiResponse)
         {
-            if (string.IsNullOrWhiteSpace(aiResponse))
+            string comment = "";
+            int score = 0;
+
+            var commentMatch = Regex.Match(aiResponse, @"КОММЕНТАРИЙ:\s*(.*?)\s*ОЦЕНКА:", RegexOptions.Singleline);
+            var scoreMatch = Regex.Match(aiResponse, @"ОЦЕНКА:\s*(\d)");
+
+            if (commentMatch.Success)
             {
-                return ("Не получен ответ от ИИ", 1);
+                comment = commentMatch.Groups[1].Value.Trim();
             }
 
-            try
+            if (scoreMatch.Success && int.TryParse(scoreMatch.Groups[1].Value, out int parsedScore))
             {
-                var lines = aiResponse.Split('\n')
-                    .Select(line => line.Trim())
-                    .Where(line => !string.IsNullOrWhiteSpace(line))
-                    .ToArray();
-
-                string comment = "Комментарий не найден";
-                int score = 3;
-
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    if (lines[i].StartsWith("КОММЕНТАРИЙ:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        comment = string.Join("\n", lines.Skip(i + 1).TakeWhile(x =>
-                            !x.StartsWith("ОЦЕНКА:", StringComparison.OrdinalIgnoreCase)));
-                    }
-                    else if (lines[i].StartsWith("ОЦЕНКА:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var scorePart = lines[i].Substring("ОЦЕНКА:".Length).Trim();
-                        if (int.TryParse(scorePart, out int parsedScore) && parsedScore >= 1 && parsedScore <= 5)
-                        {
-                            score = parsedScore;
-                        }
-                    }
-                }
-
-                return (comment.Trim(), score);
+                score = parsedScore;
             }
-            catch
-            {
-                return (aiResponse, 3);
-            }
+
+            return (comment, score);
         }
-    }
 
-    public class ChatMessage
-    {
-        public string role { get; set; }
-        public string content { get; set; }
+
+        public class ChatMessage
+        {
+            public string role { get; set; }
+            public string content { get; set; }
+        }
     }
 }

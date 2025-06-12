@@ -62,25 +62,32 @@ namespace IntellectFlow.ViewModels
 
         public string AiComment
         {
-            get => _aiComment ?? Submission?.AiComment;
+            get => Submission?.AiComment;
             set
             {
-                _aiComment = value;
-                if (Submission != null) Submission.AiComment = value;
-                OnPropertyChanged(nameof(AiComment));
+                if (Submission != null && Submission.AiComment != value)
+                {
+                    Submission.AiComment = value;
+                    OnPropertyChanged(nameof(AiComment));
+                }
             }
         }
 
+
+
         public int? AiScore
         {
-            get => _aiScore ?? Submission?.AiScore;
+            get => Submission?.AiScore;
             set
             {
-                _aiScore = value;
-                if (Submission != null) Submission.AiScore = value;
-                OnPropertyChanged(nameof(AiScore));
+                if (Submission != null && Submission.AiScore != value)
+                {
+                    Submission.AiScore = value;
+                    OnPropertyChanged(nameof(AiScore));
+                }
             }
         }
+
 
         public bool HasAssignmentContent =>
             (Assignment?.Document != null && !string.IsNullOrEmpty(Assignment.Document.FilePath) ||
@@ -100,6 +107,13 @@ namespace IntellectFlow.ViewModels
             CheckWithAICommand = new AsyncRelayCommand(CheckWithAI,
                 _ => HasSubmissionContent && HasAssignmentContent);
         }
+        private async Task<string> ReadFileContentWithLimit(string filePath, int maxLength)
+        {
+            using var reader = new StreamReader(filePath);
+            char[] buffer = new char[maxLength];
+            int readChars = await reader.ReadBlockAsync(buffer, 0, maxLength);
+            return new string(buffer, 0, readChars);
+        }
 
         private async Task CheckWithAI(object _)
         {
@@ -111,20 +125,34 @@ namespace IntellectFlow.ViewModels
 
             try
             {
-                string assignmentFilePath = Assignment.Document?.FilePath;
-                string assignmentText = Assignment.Description;
-                string submissionFilePath = Submission.Document?.FilePath;
-                string submissionText = Submission.SubmissionText;
+                string assignmentContent = "";
+                string submissionContent = "";
 
-                if (!HasSubmissionContent)
+                if (Assignment.Document != null && !string.IsNullOrEmpty(Assignment.Document.FilePath) && File.Exists(Assignment.Document.FilePath))
                 {
-                    ShowErrorMessage("Нет решения для проверки");
+                    assignmentContent = await ReadFileContentWithLimit(Assignment.Document.FilePath, 5000);
+                }
+                else if (!string.IsNullOrEmpty(Assignment.Description))
+                {
+                    assignmentContent = Assignment.Description;
+                }
+                else
+                {
+                    ShowErrorMessage("Нет задания для проверки");
                     return;
                 }
 
-                if (!HasAssignmentContent)
+                if (Submission.Document != null && !string.IsNullOrEmpty(Submission.Document.FilePath) && File.Exists(Submission.Document.FilePath))
                 {
-                    ShowErrorMessage("Нет задания для проверки");
+                    submissionContent = await ReadFileContentWithLimit(Submission.Document.FilePath, 5000);
+                }
+                else if (!string.IsNullOrEmpty(Submission.SubmissionText))
+                {
+                    submissionContent = Submission.SubmissionText;
+                }
+                else
+                {
+                    ShowErrorMessage("Нет решения для проверки");
                     return;
                 }
 
@@ -132,19 +160,17 @@ namespace IntellectFlow.ViewModels
                 var token = await service.GetAccessToken();
 
                 IsCheckingWithAI = true;
-
                 var (comment, score) = await service.AnalyzeSubmission(
-                    token,
-                    assignmentFilePath,
-                    assignmentText,
-                    submissionFilePath,
-                    submissionText
-                );
+      token,
+      assignmentContent,
+      submissionContent
+  );
 
                 AiComment = comment;
                 AiScore = score;
                 Submission.IsAiChecked = true;
                 Submission.Status = SubmissionStatus.Checked;
+
 
                 await SaveResultsToDatabase();
                 ShowSuccessMessage($"Проверка завершена. Оценка: {score}");
@@ -158,6 +184,7 @@ namespace IntellectFlow.ViewModels
                 IsCheckingWithAI = false;
             }
         }
+
 
         private void ShowErrorMessage(string message)
         {
