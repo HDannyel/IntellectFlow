@@ -12,12 +12,16 @@ using Microsoft.EntityFrameworkCore;
 using IntellectFlow.Views;
 using IntellectFlow.ViewModels;
 using System.Windows;
+using Azure;
+using Microsoft.Win32;
 
 public class CourseDetailsViewModel : INotifyPropertyChanged
 {
     private readonly IntellectFlowDbContext _db;
     private readonly int _courseId;
     private readonly FileHelper _fileHelper;
+    // Новое свойство для проверки наличия ответа
+    public bool HasAiResponse => !string.IsNullOrWhiteSpace(AiResponse);
 
     public CourseDetailsViewModel(IntellectFlowDbContext db, int courseId)
     {
@@ -44,6 +48,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         RemoveStudentFromCourseCommand = new RelayCommand(_ => RemoveStudentFromCourse(),
             _ => SelectedStudentInCourse != null && Course != null);
         ShowStudentTasksCommand = new RelayCommand(OpenStudentTasks);
+        SaveAiResponseCommand = new RelayCommand(_ => SaveAiResponse());
     }
 
     // Основные свойства
@@ -69,6 +74,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
             }
         }
     }
+   
 
     private Student? _selectedStudentToAdd;
     public Student? SelectedStudentToAdd
@@ -173,7 +179,7 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     public ICommand AddStudentToCourseCommand { get; }
     public ICommand RemoveStudentFromCourseCommand { get; }
     public ICommand ShowStudentTasksCommand { get; }
- 
+    public ICommand SaveAiResponseCommand { get; }
 
     private readonly INavigationService _navigationService;
     public void OpenStudentTasks(object param)
@@ -317,11 +323,17 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         set { _aiMessage = value; OnPropertyChanged(nameof(AiMessage)); }
     }
 
+    // Обновляем сеттер AiResponse для уведомления о изменении HasAiResponse
     private string _aiResponse = "";
     public string AiResponse
     {
         get => _aiResponse;
-        set { _aiResponse = value; OnPropertyChanged(nameof(AiResponse)); }
+        set
+        {
+            _aiResponse = value;
+            OnPropertyChanged(nameof(AiResponse));
+            OnPropertyChanged(nameof(HasAiResponse)); // Важное обновление!
+        }
     }
 
     private bool _isAiProcessing;
@@ -334,8 +346,43 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     public ICommand SendAiMessageCommand { get; }
 
 
+private void SaveAiResponse()
+{
+    if (string.IsNullOrWhiteSpace(AiResponse)) return;
+    if (Course == null) return;
 
-    private async Task SendToAI()
+    try
+    {
+        // Подготавливаем стандартное имя файла
+        string defaultFileName = $"AI_Response_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+
+        // Создаем диалог выбора пути
+        SaveFileDialog saveFileDialog = new SaveFileDialog
+        {
+            FileName = defaultFileName,
+            DefaultExt = ".txt",
+            Filter = "Text documents (.txt)|*.txt",
+            Title = "Сохранить ответ ИИ"
+        };
+
+        // Если пользователь выбрал место
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            File.WriteAllText(saveFileDialog.FileName, AiResponse);
+
+            MessageBox.Show($"Файл сохранен:\n{saveFileDialog.FileName}", "Успех",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+}
+
+
+private async Task SendToAI()
     {
         if (string.IsNullOrWhiteSpace(AiMessage)) return;
 

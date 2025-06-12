@@ -3,12 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:IntellectFlow.Helpers"
         xmlns:data="clr-namespace:IntellectFlow.DataModel"
-        Title="Задания студента" Height="600" Width="1000"
+        Title="Задания студента" Height="600" Width="1883"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <local:NullToBooleanConverter x:Key="NullToFalseConverter" />
-
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <!-- Стиль для кнопок действий -->
         <Style x:Key="ActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#FF0078D7"/>
@@ -57,16 +57,34 @@
             <GroupBox Header="Детали решения">
                 <StackPanel Margin="10">
                     <TextBlock Text="Комментарий преподавателя:" FontWeight="Bold" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding SelectedAssignment.TeacherComment, UpdateSourceTrigger=PropertyChanged}" 
-                             TextWrapping="Wrap" 
-                             Height="60"
-                             AcceptsReturn="True"/>
+                    <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding SelectedAssignment.TeacherComment, UpdateSourceTrigger=PropertyChanged}" 
+             TextWrapping="Wrap"
+             AcceptsReturn="True"
+             VerticalScrollBarVisibility="Auto"
+             BorderThickness="1"
+             Padding="4"
+             Background="White"/>
+                    </ScrollViewer>
 
                     <TextBlock Text="Комментарий ИИ:" FontWeight="Bold" Margin="0,10,0,5"/>
-                    <TextBox Text="{Binding SelectedAssignment.AiComment, Mode=OneWay}" 
-                             IsReadOnly="True" 
-                             TextWrapping="Wrap" 
-                             Height="60"/>
+                    <StackPanel>
+                        <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
+                            <TextBox Text="{Binding SelectedAssignment.AiComment, Mode=OneWay}" 
+                 IsReadOnly="True"
+                 TextWrapping="Wrap" 
+                 VerticalScrollBarVisibility="Auto"
+                 BorderThickness="1"
+                 Padding="4"
+                 Background="#FFF9F9F9"/>
+                        </ScrollViewer>
+                       
+                        <!--<ProgressBar Height="20"
+                 Margin="0,5,0,0"
+                 IsIndeterminate="True"
+                 Visibility="{Binding CheckWithAICommand, Converter={StaticResource BoolToVisibilityConverter}}"/>-->
+                    </StackPanel>
+
 
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                         <TextBlock Text="Оценка ИИ:" FontWeight="Bold" VerticalAlignment="Center"/>

@@ -37,7 +37,16 @@ namespace IntellectFlow.ViewModels
                 }
             }
         }
-
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                _isBusy = value;
+                OnPropertyChanged(nameof(IsBusy));
+            }
+        }
         public ICommand SaveChangesCommand { get; }
         public ICommand OpenSubmissionFileCommand { get; }
 
