@@ -243,6 +243,49 @@
                             IsEnabled="{Binding SelectedStudentToAdd, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </TabItem>
+            <TabItem Header="ИИ-помощник">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- История диалога -->
+                    <Border Grid.Row="0" BorderBrush="#4A90E2" BorderThickness="1" 
+                CornerRadius="4" Padding="5" Margin="0,0,0,10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBox Text="{Binding AiResponse}" 
+             TextWrapping="Wrap" 
+             IsReadOnly="True" 
+             BorderThickness="0"
+             Background="Transparent"
+             Foreground="Black"
+             VerticalScrollBarVisibility="Auto"
+             />
+                        </ScrollViewer>
+
+                    </Border>
+
+                    <!-- Поле ввода -->
+                    <TextBox Grid.Row="1" Text="{Binding AiMessage, UpdateSourceTrigger=PropertyChanged}" 
+                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto" 
+                 Height="100" Margin="0,0,0,10"/>
+
+                    <!-- Кнопка отправки -->
+                    <Button Grid.Row="2" Content="Отправить" Command="{Binding SendAiMessageCommand}" 
+                Width="750" Height="30" HorizontalAlignment="Center" Margin="0,0,0,10">
+                       
+                    </Button>
+
+                    <!-- Индикатор загрузки -->
+                    <ProgressBar Grid.Row="3" Height="20" IsIndeterminate="True"
+                     Visibility="{Binding IsAiProcessing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </Grid>
+            </TabItem>
+
+
         </TabControl>
     </Grid>
 </Window>

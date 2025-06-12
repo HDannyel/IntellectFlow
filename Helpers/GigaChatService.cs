@@ -213,6 +213,47 @@ namespace IntellectFlow.Helpers
                 throw new Exception("Ошибка при анализе решения", ex);
             }
         }
+        public async Task<string> GeneralChatAsync(string token, List<ChatMessage> messages)
+        {
+            var payload = new
+            {
+                model = "GigaChat-Max",
+                messages,
+                temperature = 0.7,
+                max_tokens = 2000
+            };
+
+            try
+            {
+                var request = (HttpWebRequest)WebRequest.Create(ChatCompletionUrl);
+                request.Method = "POST";
+                request.Headers.Add("Authorization", $"Bearer {token}");
+                request.ContentType = "application/json";
+                request.Timeout = 30000;
+
+                using (var requestStream = await request.GetRequestStreamAsync())
+                {
+                    byte[] jsonBytes = JsonSerializer.SerializeToUtf8Bytes(payload);
+                    await requestStream.WriteAsync(jsonBytes, 0, jsonBytes.Length);
+                }
+
+                using (var response = (HttpWebResponse)await request.GetResponseAsync())
+                using (var reader = new StreamReader(response.GetResponseStream()))
+                {
+                    var responseBody = await reader.ReadToEndAsync();
+                    using var doc = JsonDocument.Parse(responseBody);
+                    return doc.RootElement
+                        .GetProperty("choices")[0]
+                        .GetProperty("message")
+                        .GetProperty("content")
+                        .GetString();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Ошибка в чате с ИИ", ex);
+            }
+        }
 
 
         private (string Comment, int Score) ParseAIResponse(string aiResponse)
@@ -234,7 +275,9 @@ namespace IntellectFlow.Helpers
             }
 
             return (comment, score);
+
         }
+    
 
 
         public class ChatMessage

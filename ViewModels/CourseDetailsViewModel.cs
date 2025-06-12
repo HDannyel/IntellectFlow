@@ -36,7 +36,8 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
         UploadLectureFileCommand = new RelayCommand(_ => UploadLectureFile());
         DeleteLectureCommand = new RelayCommand(param => DeleteLecture(param as Lecture), param => param is Lecture);
         DeleteAssignmentCommand = new RelayCommand(param => DeleteAssignment(param as Assignment), param => param is Assignment);
-
+        // Команда для ИИ
+        SendAiMessageCommand = new RelayCommand(async _ => await SendToAI());
         // Команды для работы со студентами
         AddStudentToCourseCommand = new RelayCommand(_ => AddStudentToCourse(),
             _ => SelectedStudentToAdd != null && Course != null);
@@ -309,6 +310,70 @@ public class CourseDetailsViewModel : INotifyPropertyChanged
     #endregion
 
     #region Методы для заданий
+    private string _aiMessage = "";
+    public string AiMessage
+    {
+        get => _aiMessage;
+        set { _aiMessage = value; OnPropertyChanged(nameof(AiMessage)); }
+    }
+
+    private string _aiResponse = "";
+    public string AiResponse
+    {
+        get => _aiResponse;
+        set { _aiResponse = value; OnPropertyChanged(nameof(AiResponse)); }
+    }
+
+    private bool _isAiProcessing;
+    public bool IsAiProcessing
+    {
+        get => _isAiProcessing;
+        set { _isAiProcessing = value; OnPropertyChanged(nameof(IsAiProcessing)); }
+    }
+
+    public ICommand SendAiMessageCommand { get; }
+
+
+
+    private async Task SendToAI()
+    {
+        if (string.IsNullOrWhiteSpace(AiMessage)) return;
+
+        try
+        {
+            IsAiProcessing = true;
+
+            var service = new GigaChatService();
+            var token = await service.GetAccessToken();
+
+            var messages = new List<GigaChatService.ChatMessage>
+            {
+                new GigaChatService.ChatMessage
+                {
+                    role = "system",
+                    content = "Ты - AI-ассистент преподавателя. Помогай создавать учебные материалы, " +
+                              "генерировать задания, давать советы по преподаванию и отвечать на вопросы. " +
+                              "Текущий курс: " + Course?.Name
+                },
+                new GigaChatService.ChatMessage
+                {
+                    role = "user",
+                    content = AiMessage
+                }
+            };
+
+            AiResponse = await service.GeneralChatAsync(token, messages);
+            AiMessage = ""; // Очищаем поле ввода после успешной отправки
+        }
+        catch (Exception ex)
+        {
+            AiResponse = $"Ошибка: {ex.Message}";
+        }
+        finally
+        {
+            IsAiProcessing = false;
+        }
+    }
 
     private bool CanAddAssignment()
     {
